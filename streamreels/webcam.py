@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import config
-from .utils import ensure_dir, log, retry, short_hash
+from .utils import duration, ensure_dir, log, retry, short_hash
 
 # Fallback panel (relative coords) if detection is unavailable/unreliable.
 DEFAULT_PANEL = (0.70, 0.00, 1.00, 1.00)
@@ -265,7 +265,7 @@ def detect_panel(source: Path, api_key: str | None = None,
         return Panel(*DEFAULT_PANEL, source="default")
 
     n = samples or config.TYPESAFE_SAMPLES
-    total = _duration(source)
+    total = duration(source)
     boxes: list[tuple[float, float, float, float]] = []
     for t in _sample_times(total, n):
         try:
@@ -314,13 +314,3 @@ def parse_manual(spec: str) -> Panel:
     if x1 - x0 < 0.02 or y1 - y0 < 0.02:
         raise ValueError("--webcam box too small")
     return Panel(x0, y0, x1, y1, source="manual")
-
-
-def _duration(source: Path) -> float:
-    try:
-        out = subprocess.check_output(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=nw=1:nk=1", str(source)], text=True)
-        return float(out.strip())
-    except Exception:  # noqa: BLE001
-        return 0.0

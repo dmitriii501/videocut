@@ -31,6 +31,26 @@ YUNET_PATH = ASSETS / "face_detection_yunet_2023mar.onnx"
 SUBTITLE_FONT = os.environ.get("SUBTITLE_FONT", "Noto Sans")
 SUBTITLE_WORDS_PER_CAPTION = int(os.environ.get("SUBTITLE_WORDS", 4))
 
+# Render tuning.
+VIDEO_CRF = int(os.environ.get("REEL_CRF", 20))
+VIDEO_PRESET = os.environ.get("REEL_PRESET", "veryfast")
+AUDIO_BITRATE = os.environ.get("REEL_AUDIO_BITRATE", "128k")
+BLUR_RADIUS = int(os.environ.get("REEL_BLUR_RADIUS", 20))
+BLUR_POWER = int(os.environ.get("REEL_BLUR_POWER", 2))
+
+# Description generation.
+# Extra hashtags appended to every auto-description (comma-separated).
+DEFAULT_HASHTAGS = [
+    t.strip() for t in os.environ.get(
+        "STREAMREELS_DEFAULT_HASHTAGS", "#стрим,#twitch").split(",") if t.strip()
+]
+DESCRIBE_TITLE_MAX = int(os.environ.get("STREAMREELS_TITLE_MAX", 70))
+DESCRIBE_DESC_MAX = int(os.environ.get("STREAMREELS_DESC_MAX", 400))
+DESCRIBE_CAPTION_MAX = int(os.environ.get("STREAMREELS_CAPTION_MAX", 1000))
+LLM_URL = os.environ.get("STREAMREELS_LLM_URL", "https://api.openai.com/v1")
+LLM_MODEL = os.environ.get("STREAMREELS_LLM_MODEL", "gpt-4o-mini")
+LLM_TEMPERATURE = float(os.environ.get("STREAMREELS_LLM_TEMPERATURE", 0.7))
+
 # Webcam panel auto-detection via TypeSafe ("jev") box localization.
 TYPESAFE_URL = os.environ.get("TYPESAFE_URL", "https://api.typesafe.ai")
 TYPESAFE_MODEL = os.environ.get("TYPESAFE_MODEL", "jev-latest")
