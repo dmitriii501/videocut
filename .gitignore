@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime data / outputs
+cache/
+out/
+out_auto/
+out_static/
+*.log
+
+# Models / large binaries
+assets/*.onnx
+
+# Local secrets
+.env
+.env.*
+*.pem
+*.key
+id_*
