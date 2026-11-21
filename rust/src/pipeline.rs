@@ -2,6 +2,7 @@
 
 use anyhow::{bail, Context, Result};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::config;
 use crate::describe;
@@ -13,8 +14,11 @@ use crate::telegram;
 use crate::utils::{duration, ensure_dir, fmt_ts, log, short_hash, slugify};
 use crate::webcam;
 
+/// Callback invoked with human-readable progress notes as a job advances.
+pub type Progress = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// A single reel-production job.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ReelJob {
     pub source_url: String,
     pub segments: Vec<(f64, f64)>,
@@ -33,6 +37,28 @@ pub struct ReelJob {
     pub words: Option<Vec<Word>>,
     /// Translate subtitles to this language (e.g. "ru").
     pub subtitle_lang: Option<String>,
+    /// Optional progress callback (e.g. to update a Telegram status message).
+    pub progress: Option<Progress>,
+}
+
+impl std::fmt::Debug for ReelJob {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReelJob")
+            .field("source_url", &self.source_url)
+            .field("segments", &self.segments)
+            .field("out_dir", &self.out_dir)
+            .field("auto_count", &self.auto_count)
+            .field("progress", &self.progress.is_some())
+            .finish()
+    }
+}
+
+impl ReelJob {
+    fn note(&self, msg: &str) {
+        if let Some(cb) = &self.progress {
+            cb(msg);
+        }
+    }
 }
 
 impl Default for ReelJob {
@@ -49,6 +75,7 @@ impl Default for ReelJob {
             send_telegram: false,
             words: None,
             subtitle_lang: None,
+            progress: None,
         }
     }
 }
@@ -66,8 +93,10 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             bail!("local source not found: {}", local.display());
         }
         log(format!("using local source: {}", local.display()));
+        job.note("📥 Открываю локальный файл…");
         local.clone()
     } else {
+        job.note("📥 Скачиваю видео…");
         fetch::fetch_source(&job.source_url, &workdir(&job.source_url)?)?
     };
 
@@ -102,6 +131,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
     let all_words: Option<Vec<Word>> = if let Some(words) = &job.words {
         Some(words.clone())
     } else if !job.no_subs || job.auto_count > 0 {
+        job.note("🎧 Распознаю речь (whisper)…");
         Some(
             subtitles::transcribe(&source, config::whisper_lang().as_deref())
                 .context("transcribe source")?,
@@ -111,6 +141,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
     };
 
     let segments: Vec<(f64, f64)> = if job.auto_count > 0 {
+        job.note("🔍 Ищу лучшие моменты…");
         let segs = highlights::detect_highlights(
             &source,
             job.auto_count,
@@ -139,6 +170,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             "--- segment {idx}/{total_segments}: {} +{dur:.1}s",
             fmt_ts(start)
         ));
+        job.note(&format!("✂️ Ролик {idx}/{total_segments}: монтаж…"));
 
         let work = workdir(&job.source_url)?;
         let ass_path = work.join(format!("seg{idx}.ass"));
@@ -150,6 +182,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             if !seg_words.is_empty() {
                 let sub_words = if let Some(target) = &job.subtitle_lang {
                     let src = config::whisper_lang().unwrap_or_else(|| "en".to_string());
+                    job.note(&format!("🌐 Перевожу субтитры {src}→{target}…"));
                     let translated =
                         crate::translate::translate_words(&seg_words, target, &src, None);
                     log(format!("translated subtitles {src}->{target}"));
@@ -180,6 +213,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             Some(p) => p.clone(),
             None => webcam::detect_panel_window(&source, start, dur),
         };
+        job.note(&format!("🎬 Рендерю ролик {idx}/{total_segments}…"));
         render::render_reel(&source, start, dur, ass_for_render.as_deref(), &out, Some(panel))?;
         produced.push(out.clone());
 

@@ -6,12 +6,14 @@
 //! * A message that contains a URL is classified:
 //!     - Twitch channel (`twitch.tv/<name>`, no `/videos/`) -> live mode.
 //!     - Twitch VOD / clip / YouTube -> VOD mode.
-//! * `/stop` aborts the current live job (sets an atomic flag that `run_live`
-//!   polls through `LiveJob.should_stop`).
+//! * The UI is HTML-formatted with emoji, an editable live status message and
+//!   inline-keyboard buttons (Stop / Status) wired to callback queries.
+//! * `/stop` (or the Stop button) aborts the current live job via an atomic flag
+//!   that `run_live` polls through `LiveJob.should_stop`.
 
 use std::collections::{HashSet, VecDeque};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -21,9 +23,32 @@ use serde_json::Value;
 
 use crate::config;
 use crate::live_pipeline::{run_live, LiveJob};
-use crate::pipeline::{run_job, ReelJob};
+use crate::pipeline::{run_job, Progress, ReelJob};
 use crate::telegram;
-use crate::utils::{ensure_dir, log, timestamp};
+use crate::utils::{ensure_dir, html_escape, log, timestamp};
+
+const PARSE_HTML: &str = "HTML";
+
+fn status_keyboard() -> String {
+    r#"{"inline_keyboard":[[{"text":"🔄 Статус","callback_data":"status"}]]}"#.to_string()
+}
+
+fn stop_keyboard() -> String {
+    r#"{"inline_keyboard":[[{"text":"⏹ Остановить","callback_data":"stop"}]]}"#.to_string()
+}
+
+fn empty_keyboard() -> &'static str {
+    r#"{"inline_keyboard":[]}"#
+}
+
+fn truncate_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let mut out: String = s.chars().take(max.saturating_sub(1)).collect();
+    out.push('…');
+    out
+}
 
 /// Minimal URL matcher: `http(s)://` followed by non-whitespace.
 fn find_url(text: &str) -> Option<String> {
@@ -105,6 +130,61 @@ struct Task {
     stop: Arc<AtomicBool>,
 }
 
+/// A single editable "status" message in a chat, updated in place.
+struct StatusMsg {
+    chat: i64,
+    id: i64,
+    header: String,
+    markup: Option<String>,
+    last: Mutex<String>,
+}
+
+impl StatusMsg {
+    fn new(chat: i64, id: i64, header: String, markup: Option<String>) -> Self {
+        StatusMsg {
+            chat,
+            id,
+            header,
+            markup,
+            last: Mutex::new(String::new()),
+        }
+    }
+
+    fn render(&self, note: &str) -> String {
+        if note.is_empty() {
+            self.header.clone()
+        } else {
+            format!("{}\n\n{}", self.header, note)
+        }
+    }
+
+    /// Edit the message, skipping identical updates (avoids API spam).
+    fn update(&self, note: &str) {
+        if self.id == 0 {
+            return;
+        }
+        let html = self.render(note);
+        let mut last = self.last.lock().unwrap();
+        if *last == html {
+            return;
+        }
+        if telegram::edit_message_text(&html, self.chat, self.id, Some(PARSE_HTML), self.markup.as_deref())
+        {
+            *last = html;
+        }
+    }
+
+    /// Final update that also removes the inline keyboard.
+    fn finalize(&self, note: &str) {
+        if self.id == 0 {
+            return;
+        }
+        let html = self.render(note);
+        telegram::edit_message_text(&html, self.chat, self.id, Some(PARSE_HTML), Some(empty_keyboard()));
+        *self.last.lock().unwrap() = html;
+    }
+}
+
 /// Shared state handed to the worker thread.
 struct Shared {
     q: Mutex<VecDeque<Task>>,
@@ -134,18 +214,41 @@ impl Shared {
                 caption = text.trim().to_string();
             }
         }
+        let caption = truncate_chars(&html_escape(&caption), 1024);
+        telegram::send_chat_action(chat, "upload_video");
         telegram::send_video(video, &caption, Some(chat), 0.0);
     }
 
     fn run_vod(&self, task: &Task) {
         *self.current_desc.lock().unwrap() = format!("VOD {}", task.url);
-        telegram::send_message(
-            &format!("Взял в работу: {}\nИщу {} лучших моментов…", task.url, self.auto),
+        let header = format!("📼 <b>VOD</b>\n<code>{}</code>", html_escape(&task.url));
+        let kb = status_keyboard();
+        let msg_id = telegram::send_message_ex(
+            &format!("{header}\n\n⏳ Беру в работу…"),
             Some(task.chat),
+            Some(PARSE_HTML),
+            Some(&kb),
             0.0,
-        );
+        )
+        .unwrap_or(0);
+        let status = Arc::new(StatusMsg::new(task.chat, msg_id, header, Some(kb)));
+        status.update(&format!(
+            "⏳ Беру в работу, ищу {} лучших моментов…",
+            self.auto
+        ));
+
         let out_dir = ensure_dir(&config::output().join("bot").join(format!("{}-vod", timestamp())))
             .unwrap_or_else(|_| config::output());
+
+        let progress: Progress = {
+            let st = status.clone();
+            let chat = task.chat;
+            Arc::new(move |note: &str| {
+                telegram::send_chat_action(chat, "typing");
+                st.update(note);
+            })
+        };
+
         let job = ReelJob {
             source_url: task.url.clone(),
             segments: Vec::new(),
@@ -153,52 +256,73 @@ impl Shared {
             out_dir,
             channel: task.url.clone(),
             subtitle_lang: self.lang.clone(),
+            progress: Some(progress),
             ..Default::default()
         };
         let produced = match run_job(&job) {
             Ok(p) => p,
             Err(exc) => {
-                telegram::send_message(&format!("Не получилось: {exc}"), Some(task.chat), 0.0);
+                status.finalize(&format!(
+                    "❌ <b>Ошибка</b>\n<code>{}</code>",
+                    html_escape(&exc.to_string())
+                ));
                 return;
             }
         };
         if produced.is_empty() {
-            telegram::send_message("Моментов не нашёл.", Some(task.chat), 0.0);
+            status.finalize("🤷 Моментов не нашёл.");
             return;
         }
-        telegram::send_message(
-            &format!("Готово: {} ролик(ов), отправляю…", produced.len()),
-            Some(task.chat),
-            0.0,
-        );
+        status.update(&format!(
+            "📤 Готово: {} ролик(ов), отправляю…",
+            produced.len()
+        ));
+        let mut sent = 0usize;
         for video in produced {
             if task.stop.load(Ordering::SeqCst) {
-                telegram::send_message("Остановлено.", Some(task.chat), 0.0);
+                status.finalize(&format!("⏹ Остановлено. Отправлено: {sent}."));
                 return;
             }
             Self::send_sidecar(&video, task.chat);
+            sent += 1;
         }
+        status.finalize(&format!(
+            "✅ Отправил {sent} ролик(ов). Приятного просмотра!"
+        ));
     }
 
     fn run_live_task(&self, task: &Task) {
         *self.current_desc.lock().unwrap() = format!("live {}", task.url);
-        telegram::send_message(
-            &format!(
-                "Смотрю стрим: {}\nСделаю {} ролика и пришлю. Отменить — /stop",
-                task.url, self.max_live
-            ),
+        let header = format!("🔴 <b>LIVE</b>\n<code>{}</code>", html_escape(&task.url));
+        let kb = stop_keyboard();
+        let msg_id = telegram::send_message_ex(
+            &format!("{header}\n\n👀 Смотрю стрим, ловлю хайп…"),
             Some(task.chat),
+            Some(PARSE_HTML),
+            Some(&kb),
             0.0,
-        );
+        )
+        .unwrap_or(0);
+        let status = Arc::new(StatusMsg::new(task.chat, msg_id, header, Some(kb)));
+
         let out_dir = ensure_dir(&config::output().join("bot").join(format!("{}-live", timestamp())))
             .unwrap_or_else(|_| config::output());
         let chat = task.chat;
-        let stop = task.stop.clone();
-        let on_reel: Arc<dyn Fn(&Path) + Send + Sync> = Arc::new(move |video: &Path| {
-            if !stop.load(Ordering::SeqCst) {
+        let count = Arc::new(AtomicUsize::new(0));
+        let on_reel: Arc<dyn Fn(&Path) + Send + Sync> = {
+            let st = status.clone();
+            let count = count.clone();
+            let stop = task.stop.clone();
+            Arc::new(move |video: &Path| {
+                if stop.load(Ordering::SeqCst) {
+                    return;
+                }
+                let n = count.fetch_add(1, Ordering::SeqCst) + 1;
+                st.update(&format!("🎬 Поймал момент #{n}! Отправляю…"));
                 Shared::send_sidecar(video, chat);
-            }
-        });
+                st.update(&format!("🎬 Момент #{n} отправлен. Продолжаю смотреть…"));
+            })
+        };
         let job = LiveJob {
             url: task.url.clone(),
             out_dir,
@@ -208,23 +332,28 @@ impl Shared {
             on_reel: Some(on_reel),
             ..Default::default()
         };
-        let produced = match run_live(&job) {
-            Ok(p) => p,
-            Err(exc) => {
-                telegram::send_message(&format!("Не получилось: {exc}"), Some(task.chat), 0.0);
-                return;
+        match run_live(&job) {
+            Ok(produced) => {
+                if task.stop.load(Ordering::SeqCst) {
+                    status.finalize(&format!(
+                        "⏹ Стрим остановлен. Поймано роликов: {}.",
+                        count.load(Ordering::SeqCst)
+                    ));
+                } else if produced.is_empty() {
+                    status.finalize("🤷 Не поймал ни одного момента, попробуй ещё.");
+                } else {
+                    status.finalize(&format!(
+                        "✅ Стрим закончился. Отправлено роликов: {}.",
+                        produced.len()
+                    ));
+                }
             }
-        };
-        if task.stop.load(Ordering::SeqCst) {
-            telegram::send_message("Стрим остановлен по команде /stop.", Some(task.chat), 0.0);
-        } else if produced.is_empty() {
-            telegram::send_message("Не поймал ни одного момента, попробуй ещё.", Some(task.chat), 0.0);
-        } else {
-            telegram::send_message(
-                &format!("Готово: {} ролик(ов) со стрима.", produced.len()),
-                Some(task.chat),
-                0.0,
-            );
+            Err(exc) => {
+                status.finalize(&format!(
+                    "❌ <b>Ошибка</b>\n<code>{}</code>",
+                    html_escape(&exc.to_string())
+                ));
+            }
         }
     }
 
@@ -252,13 +381,13 @@ impl Shared {
     }
 }
 
-const HELP: &str = "Привет! Пришли ссылку — сделаю вертикальные рилсы с русскими \
-субтитрами.\n\n\
-• Ссылка на Twitch-канал → смотрю live и ловлю моменты\n\
-• Ссылка на VOD (Twitch/YouTube) → нарезаю лучшие моменты\n\n\
-Команды:\n\
+const HELP: &str = "👋 <b>Привет!</b> Пришли ссылку — сделаю вертикальные рилсы \
+с русскими субтитрами.\n\n\
+🔴 <b>Ссылка на Twitch-канал</b> — смотрю live и ловлю хайп-моменты\n\
+📼 <b>VOD / клип / YouTube</b> — нарезаю лучшие моменты\n\n\
+<b>Команды</b>\n\
 /status — что сейчас в работе\n\
-/stop — остановить текущий live\n\
+/stop — остановить текущий стрим\n\
 /help — эта справка";
 
 pub struct Bot {
@@ -300,7 +429,59 @@ impl Bot {
         self.lock_chat == Some(chat)
     }
 
+    fn handle_callback(&mut self, cb: &Value) {
+        let id = cb.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let data = cb.get("data").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let chat = cb
+            .get("message")
+            .and_then(|m| m.get("chat"))
+            .and_then(|c| c.get("id"))
+            .and_then(|v| v.as_i64());
+        let Some(chat) = chat else { return };
+        if !self.authorized(chat) {
+            return;
+        }
+        match data.as_str() {
+            "stop" => {
+                let current = self.shared.current.lock().unwrap().clone();
+                match current {
+                    Some(t) if t.kind == "live" => {
+                        t.stop.store(true, Ordering::SeqCst);
+                        telegram::answer_callback_query(&id, "Останавливаю стрим…");
+                    }
+                    _ => {
+                        telegram::answer_callback_query(&id, "Сейчас нечего останавливать");
+                    }
+                }
+            }
+            "status" => {
+                let current = self.shared.current.lock().unwrap().clone();
+                let txt = match current {
+                    None => {
+                        let pending = self.shared.qsize();
+                        if pending > 0 {
+                            format!("В очереди: {pending}")
+                        } else {
+                            "Свободен".to_string()
+                        }
+                    }
+                    Some(_) => self.shared.current_desc.lock().unwrap().clone(),
+                };
+                telegram::answer_callback_query(&id, &txt);
+            }
+            _ => {
+                telegram::answer_callback_query(&id, "");
+            }
+        }
+    }
+
     fn handle(&mut self, update: &Value) {
+        if let Some(cb) = update.get("callback_query") {
+            if cb.is_object() {
+                self.handle_callback(cb);
+            }
+            return;
+        }
         let msg = update.get("message").or_else(|| update.get("edited_message"));
         let msg = match msg {
             Some(m) if m.is_object() => m,
@@ -320,32 +501,38 @@ impl Bot {
             .map(|s| s.trim().to_string())
             .unwrap_or_default();
         if text.is_empty() {
-            telegram::send_message("Пришли ссылку на стрим или VOD.", Some(chat), 0.0);
+            telegram::send_message_ex(
+                "📎 Пришли <b>ссылку</b> на стрим или VOD.",
+                Some(chat),
+                Some(PARSE_HTML),
+                None,
+                0.0,
+            );
             return;
         }
 
         let low = text.to_lowercase();
         if low.starts_with("/start") || low.starts_with("/help") {
-            telegram::send_message(HELP, Some(chat), 0.0);
+            telegram::send_message_ex(HELP, Some(chat), Some(PARSE_HTML), None, 0.0);
             return;
         }
         if low.starts_with("/status") {
             let current = self.shared.current.lock().unwrap().clone();
-            match current {
+            let body = match current {
                 None => {
                     let pending = self.shared.qsize();
-                    let tail = if pending > 0 {
-                        format!(" В очереди: {pending}.")
+                    if pending > 0 {
+                        format!("💤 Сейчас ничего не делаю.\nВ очереди: {pending}.")
                     } else {
-                        String::new()
-                    };
-                    telegram::send_message(&format!("Сейчас ничего не делаю.{tail}"), Some(chat), 0.0);
+                        "💤 Сейчас ничего не делаю.".to_string()
+                    }
                 }
                 Some(_) => {
                     let desc = self.shared.current_desc.lock().unwrap().clone();
-                    telegram::send_message(&format!("В работе: {desc}"), Some(chat), 0.0);
+                    format!("⚙️ В работе: <code>{}</code>", html_escape(&desc))
                 }
-            }
+            };
+            telegram::send_message_ex(&body, Some(chat), Some(PARSE_HTML), None, 0.0);
             return;
         }
         if low.starts_with("/stop") {
@@ -353,10 +540,22 @@ impl Bot {
             match current {
                 Some(task) if task.kind == "live" => {
                     task.stop.store(true, Ordering::SeqCst);
-                    telegram::send_message("Останавливаю стрим…", Some(chat), 0.0);
+                    telegram::send_message_ex(
+                        "⏹ Останавливаю стрим…",
+                        Some(chat),
+                        Some(PARSE_HTML),
+                        None,
+                        0.0,
+                    );
                 }
                 _ => {
-                    telegram::send_message("Сейчас нечего останавливать.", Some(chat), 0.0);
+                    telegram::send_message_ex(
+                        "Сейчас нечего останавливать.",
+                        Some(chat),
+                        Some(PARSE_HTML),
+                        None,
+                        0.0,
+                    );
                 }
             }
             return;
@@ -365,9 +564,11 @@ impl Bot {
         let url = match find_url(&text) {
             Some(u) => u,
             None => {
-                telegram::send_message(
-                    &format!("Не вижу ссылку. Пришли URL стрима или VOD.\n\n{HELP}"),
+                telegram::send_message_ex(
+                    &format!("🔗 Не вижу ссылку. Пришли URL стрима или VOD.\n\n{HELP}"),
                     Some(chat),
+                    Some(PARSE_HTML),
+                    None,
                     0.0,
                 );
                 return;
@@ -383,14 +584,23 @@ impl Bot {
         self.shared.push(task);
         let ahead = self.shared.qsize().saturating_sub(1);
         let wait = if ahead > 0 {
-            format!(" Перед тобой в очереди: {ahead}.")
+            format!("\n\nПеред тобой в очереди: {ahead}.")
         } else {
             String::new()
         };
-        let label = if kind == "live" { "live-стрим" } else { "VOD" };
-        telegram::send_message(
-            &format!("Принял ({label}): {url}.{wait} Начну, как освобожусь."),
+        let label = if kind == "live" {
+            "🔴 live-стрим"
+        } else {
+            "📼 VOD"
+        };
+        telegram::send_message_ex(
+            &format!(
+                "✅ Принял {label}\n<code>{}</code>{wait}\n\nНачну, как освобожусь.",
+                html_escape(&url)
+            ),
             Some(chat),
+            Some(PARSE_HTML),
+            Some(&status_keyboard()),
             0.0,
         );
     }
@@ -422,6 +632,13 @@ impl Bot {
 }
 
 pub fn main() -> i32 {
+    if config::tg_token().is_none() {
+        log(
+            "bot: STREAMREELS_TG_TOKEN is not set — get a token from @BotFather and \
+export STREAMREELS_TG_TOKEN=... before starting the bot",
+        );
+        return 2;
+    }
     if let Err(exc) = Bot::new().run() {
         log(format!("bot: failed: {exc}"));
         return 1;
@@ -453,5 +670,11 @@ mod tests {
             Some("https://twitch.tv/foo")
         );
         assert_eq!(find_url("no link here"), None);
+    }
+
+    #[test]
+    fn truncate_chars_limits_and_marks() {
+        assert_eq!(truncate_chars("hello", 10), "hello");
+        assert_eq!(truncate_chars("hello world", 5), "hell…");
     }
 }

@@ -248,3 +248,28 @@ pub fn check_tool(name: &str) -> Result<()> {
     }
     Ok(())
 }
+
+/// Escape text for Telegram HTML parse mode (`<`, `>`, `&`).
+pub fn html_escape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn html_escape_handles_specials() {
+        assert_eq!(html_escape("a<b>&c"), "a&lt;b&gt;&amp;c");
+        assert_eq!(html_escape("plain"), "plain");
+    }
+}

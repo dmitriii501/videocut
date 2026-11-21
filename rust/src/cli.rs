@@ -302,6 +302,7 @@ fn run(cli: Cli) -> Result<i32> {
         send_telegram: cli.telegram,
         words: None,
         subtitle_lang: cli.subtitle_lang.clone(),
+        progress: None,
     };
     let outs = run_job(&job)?;
     log("produced:");
