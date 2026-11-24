@@ -85,6 +85,18 @@ pub struct Cli {
     #[arg(long)]
     pub bot: bool,
 
+    /// Run the Web platform (CHIK self-service).
+    #[arg(long)]
+    pub web: bool,
+
+    /// Web platform port.
+    #[arg(long, default_value_t = 8080)]
+    pub web_port: u16,
+
+    /// Web platform bind address.
+    #[arg(long, default_value = "0.0.0.0")]
+    pub web_bind: String,
+
     // ----- live mode -----
     /// Watch a live Twitch stream, detect hype and cut reels in real time.
     #[arg(long, value_name = "TWITCH_URL")]
@@ -218,6 +230,10 @@ pub fn main() -> i32 {
 
 fn run(cli: Cli) -> Result<i32> {
     let webcam_spec = cli.webcam_spec();
+
+    if cli.web || (cli.url.is_none() && cli.local.is_none() && cli.live.is_none() && !cli.bot) {
+        return crate::web::run(cli.web_bind, cli.web_port);
+    }
 
     if cli.bot {
         log("starting Telegram bot (send it a URL)...");

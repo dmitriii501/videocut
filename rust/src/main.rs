@@ -18,6 +18,7 @@ mod telegram;
 mod translate;
 mod utils;
 mod webcam;
+mod web;
 
 fn main() {
     std::process::exit(cli::main());

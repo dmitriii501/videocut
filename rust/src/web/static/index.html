@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ЧИК / CHIK ✂️ — Автопилот вирусных нарезок для стримеров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              volt: '#D4FF00',
+              violet: '#8B5CF6',
+              dark: '#0B0E14',
+              surface: '#141824',
+              surfaceHover: '#1E2436',
+              border: '#2A3249',
+              fire: '#FF4757',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0B0E14;
+      color: #F8FAFC;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(212, 255, 0, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.07) 0px, transparent 50%);
+    }
+    .glow-volt {
+      box-shadow: 0 0 25px -5px rgba(212, 255, 0, 0.35);
+    }
+    .glow-violet {
+      box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.35);
+    }
+    .reel-aspect {
+      aspect-ratio: 9 / 16;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0E14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2A3249;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #D4FF00;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-volt selection:text-black">
+
+  <!-- NAVBAR -->
+  <header class="border-b border-brand-border/60 bg-brand-dark/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('create')">
+        <div class="w-10 h-10 rounded-xl bg-brand-volt text-black flex items-center justify-center font-extrabold text-2xl shadow-lg glow-volt transform -rotate-3 transition hover:rotate-0">
+          ✂️
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <span class="font-black text-2xl tracking-wider text-white">ЧИК</span>
+            <span class="text-xs font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-brand-violet/20 text-brand-violet border border-brand-violet/40">CHIK</span>
+          </div>
+          <p class="text-[10px] text-slate-400 -mt-1 hidden sm:block">автопилот нарезок из стримов</p>
+        </div>
+      </div>
+
+      <!-- Navigation links -->
+      <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
+        <button onclick="switchView('create')" id="nav-create" class="text-brand-volt hover:text-white transition">⚡ Создать нарезку</button>
+        <button onclick="switchView('reels')" id="nav-reels" class="text-slate-400 hover:text-white transition">📼 Мои клипы</button>
+        <button onclick="switchView('pricing')" id="nav-pricing" class="text-slate-400 hover:text-white transition">💎 Тарифы</button>
+      </nav>
+
+      <!-- User Info & Balance -->
+      <div class="flex items-center space-x-3">
+        <div id="user-balance-box" class="hidden flex items-center space-x-2 bg-brand-surface border border-brand-border px-3 py-1.5 rounded-xl">
+          <span class="text-brand-volt text-sm">⚡</span>
+          <span id="user-credits" class="font-mono font-bold text-sm text-white">0</span>
+          <span class="text-xs text-slate-400">кредитов</span>
+          <button onclick="openTopupModal()" class="text-xs text-black font-bold bg-brand-volt hover:bg-yellow-300 px-2 py-0.5 rounded ml-1 transition">
+            +
+          </button>
+        </div>
+
+        <div id="auth-buttons">
+          <button onclick="openAuthModal('login')" class="text-sm font-semibold text-slate-300 hover:text-white px-3 py-1.5 transition">
+            Войти
+          </button>
+          <button onclick="openAuthModal('register')" class="text-sm font-bold text-black bg-brand-volt hover:bg-yellow-300 px-4 py-2 rounded-xl transition glow-volt">
+            Попробовать бесплатно
+          </button>
+        </div>
+
+        <div id="user-profile-box" class="hidden flex items-center space-x-2">
+          <span id="user-email-display" class="text-xs text-slate-300 font-mono hidden lg:inline-block max-w-[140px] truncate"></span>
+          <button onclick="logout()" title="Выйти" class="text-xs text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-brand-surface transition">
+            🚪
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+
+    <!-- VIEW: CREATE / STUDIO -->
+    <div id="view-create" class="space-y-10">
+      
+      <!-- HERO SECTION -->
+      <div class="text-center max-w-3xl mx-auto space-y-4 pt-4">
+        <div class="inline-flex items-center space-x-2 bg-brand-surface border border-brand-border/80 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-300">
+          <span class="flex h-2 w-2 rounded-full bg-brand-volt animate-ping"></span>
+          <span>Детектор хайпа по звуку + чату Twitch/YouTube</span>
+        </div>
+        <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+          Из стрима — в вирусный клип <br class="hidden sm:inline">
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-volt via-green-300 to-brand-violet">
+            без монтажки
+          </span>
+        </h1>
+        <p class="text-slate-400 text-base sm:text-lg max-w-xl mx-auto">
+          Автопилот ловит самые сочные моменты, трекает лицо, накладывает динамичный геймплей и караоке-субтитры в 9:16.
+        </p>
+      </div>
+
+      <!-- STREAM INPUT CARD -->
+      <div class="max-w-3xl mx-auto bg-brand-surface border border-brand-border rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-48 h-48 bg-brand-volt/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-48 h-48 bg-brand-violet/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <form id="job-form" onsubmit="handleStartJob(event)" class="space-y-6 relative z-10">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+              Ссылка на стрим или видео (Twitch / YouTube)
+            </label>
+            <div class="relative">
+              <input 
+                type="text" 
+                id="stream-url" 
+                required
+                placeholder="https://www.twitch.tv/streamer или https://youtu.be/..." 
+                class="w-full bg-brand-dark/90 border border-brand-border text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-brand-volt focus:ring-1 focus:ring-brand-volt text-sm sm:text-base transition placeholder-slate-600 font-mono"
+              >
+              <button 
+                type="button" 
+                onclick="insertDemoUrl()" 
+                class="absolute right-2.5 top-2.5 text-xs bg-brand-surfaceHover hover:bg-brand-border text-slate-300 px-2.5 py-1.5 rounded-lg border border-brand-border transition"
+              >
+                Тестовый стрим
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode & Settings Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <!-- Mode -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Режим автопилота</label>
+              <select id="job-mode" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
+                <option value="auto">⚡ Авто-хайп (VOD топ-моменты)</option>
+                <option value="live">🔴 Live-эфир (стрим онлайн)</option>
+              </select>
+            </div>
+
+            <!-- Clips Count -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Количество клипов</label>
+              <select id="job-count" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
+                <option value="1">1 клип (быстро)</option>
+                <option value="3" selected>3 сочных клипа</option>
+                <option value="5">5 лучших моментов</option>
+              </select>
+            </div>
+
+            <!-- Background Gameplay -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Фоновый геймплей</label>
+              <select id="job-gameplay" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
+                <option value="subway">Subway Surfers</option>
+                <option value="minecraft">Minecraft Parkour</option>
+                <option value="gta">GTA V Ramp</option>
+                <option value="asmr">Soap / Kinetic Sand ASMR</option>
+                <option value="none">Без геймплея (вебка + стрим)</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Action Button -->
+          <button 
+            type="submit" 
+            id="btn-submit-job"
+            class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold text-lg py-4 rounded-xl transition duration-200 transform hover:-translate-y-0.5 shadow-xl glow-volt flex items-center justify-center space-x-2"
+          >
+            <span>ЧИКНУТЬ СТРИМ</span>
+            <span class="text-xl">✂️</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- ACTIVE PROCESSING / STATUS WIDGET -->
+      <div id="active-job-card" class="hidden max-w-3xl mx-auto bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="flex h-3 w-3 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-volt opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-brand-volt"></span>
+            </span>
+            <div>
+              <h3 class="font-bold text-sm text-white" id="active-job-title">Обработка стрима...</h3>
+              <p class="text-xs text-slate-400 font-mono" id="active-job-url"></p>
+            </div>
+          </div>
+          <span id="active-job-percent" class="font-mono text-xl font-black text-brand-volt">0%</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-brand-dark rounded-full h-2.5 overflow-hidden border border-brand-border">
+          <div id="active-progress-bar" class="bg-gradient-to-r from-brand-violet to-brand-volt h-2.5 rounded-full transition-all duration-300" style="width: 5%"></div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+          <span id="active-job-stage">Инициализация пайплайна...</span>
+          <span id="active-job-time">в реальном времени</span>
+        </div>
+      </div>
+
+      <!-- HOW IT WORKS BANNER -->
+      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
+          <div class="text-2xl">👂</div>
+          <h4 class="font-bold text-white text-sm">Слушает и читает чат</h4>
+          <p class="text-xs text-slate-400">Алгоритм ловит пики эмоций (громкий смех, ор) и всплески спама реакций в чате (KEKW, LUL, Pog).</p>
+        </div>
+        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
+          <div class="text-2xl">🎯</div>
+          <h4 class="font-bold text-white text-sm">Умное кадрирование</h4>
+          <p class="text-xs text-slate-400">Нейросеть делит экран 9:16 на стрим и вебку с плавным слежением за лицом стримера.</p>
+        </div>
+        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
+          <div class="text-2xl">🔥</div>
+          <h4 class="font-bold text-white text-sm">Караоке-субтитры</h4>
+          <p class="text-xs text-slate-400">Whisper генерирует динамичные субтитры с подсветкой каждого слова прямо в такт речи.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIEW: REELS GALLERY -->
+    <div id="view-reels" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Готовые нарезки</h2>
+          <p class="text-sm text-slate-400">Вертикальные клипы для публикации в Shorts, TikTok и Reels</p>
+        </div>
+        <button onclick="loadReels()" class="text-xs font-mono text-slate-300 hover:text-white bg-brand-surface border border-brand-border px-3 py-1.5 rounded-lg transition">
+          🔄 Обновить
+        </button>
+      </div>
+
+      <div id="reels-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Reel Cards injected by JS -->
+      </div>
+
+      <div id="reels-empty" class="hidden text-center py-16 space-y-4">
+        <div class="text-5xl">✂️</div>
+        <h3 class="text-lg font-bold text-white">Пока нет нарезанных клипов</h3>
+        <p class="text-sm text-slate-400 max-w-sm mx-auto">Вставь ссылку на стрим на главной, и автопилот сделает первые клипы за 2 минуты.</p>
+        <button onclick="switchView('create')" class="bg-brand-volt text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-yellow-300 transition">
+          Сделать первый клип
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW: PRICING -->
+    <div id="view-pricing" class="hidden space-y-8 max-w-5xl mx-auto py-4">
+      <div class="text-center space-y-3">
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Прозрачные тарифы без скрытых платежей</h2>
+        <p class="text-slate-400 text-sm max-w-md mx-auto">Оплата за готовые клипы. Никаких подписок, которые забываешь отменить.</p>
+      </div>
+
+      <div id="packages-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- REEL PLAYER MODAL (9:16) -->
+  <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-brand-surface border border-brand-border rounded-2xl max-w-4xl w-full flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+      
+      <!-- Video Container 9:16 -->
+      <div class="bg-black flex items-center justify-center p-4 md:w-1/2">
+        <div class="reel-aspect h-[65vh] max-h-[580px] bg-neutral-900 rounded-xl overflow-hidden relative shadow-2xl border border-brand-border">
+          <video id="modal-video" controls autoplay playsinline class="w-full h-full object-cover"></video>
+        </div>
+      </div>
+
+      <!-- Details & Actions -->
+      <div class="p-6 md:w-1/2 flex flex-col justify-between space-y-4 overflow-y-auto">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono px-2.5 py-1 rounded bg-brand-volt/10 text-brand-volt border border-brand-volt/30 font-bold" id="modal-hype-score">
+              🔥 ХАЙП-СКОР 95%
+            </span>
+            <button onclick="closePlayerModal()" class="text-slate-400 hover:text-white p-1 text-xl">✕</button>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Заголовок</label>
+            <h3 id="modal-title" class="font-extrabold text-lg text-white"></h3>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Описание для публикации</label>
+            <div id="modal-desc" class="text-xs text-slate-300 bg-brand-dark p-3 rounded-xl border border-brand-border whitespace-pre-wrap font-sans max-h-32 overflow-y-auto"></div>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Хештеги</label>
+            <div id="modal-tags" class="text-xs font-mono text-brand-volt"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-4 border-t border-brand-border">
+          <button onclick="copyModalCaptions()" class="w-full bg-brand-surfaceHover hover:bg-brand-border text-white text-xs font-bold py-2.5 rounded-xl border border-brand-border transition flex items-center justify-center space-x-1.5">
+            <span>📋 Скопировать текст и хештеги</span>
+          </button>
+          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold text-sm py-3 rounded-xl transition glow-volt flex items-center justify-center space-x-2">
+            <span>⬇️ Скачать Full HD клип</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-brand-surface border border-brand-border rounded-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative shadow-2xl">
+      <button onclick="closeAuthModal()" class="absolute right-4 top-4 text-slate-400 hover:text-white text-xl">✕</button>
+
+      <div class="text-center space-y-1">
+        <div class="text-3xl mb-1">✂️</div>
+        <h3 id="auth-modal-title" class="text-xl font-extrabold text-white">Вход в ЧИК</h3>
+        <p class="text-xs text-slate-400" id="auth-modal-subtitle">Автопилот вирусных нарезок</p>
+      </div>
+
+      <div class="flex border-b border-brand-border text-sm font-semibold">
+        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition">Вход</button>
+        <button id="tab-register" onclick="setAuthTab('register')" class="flex-1 pb-3 text-slate-400 hover:text-white transition">Регистрация (+5 клипов)</button>
+      </div>
+
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email</label>
+          <input type="email" id="auth-email" required placeholder="streamer@twitch.tv" class="w-full bg-brand-dark border border-brand-border text-white px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-volt">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Пароль</label>
+          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-brand-dark border border-brand-border text-white px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-volt">
+        </div>
+
+        <div id="auth-error" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-900/60 p-2.5 rounded-lg font-mono"></div>
+
+        <button type="submit" id="auth-submit-btn" class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold py-3 rounded-xl text-sm transition glow-volt">
+          Войти
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // State
+    let currentUser = null;
+    let currentToken = localStorage.getItem('chik_token') || null;
+    let authMode = 'login';
+    let currentModalReel = null;
+    let ws = null;
+
+    // Switch View Tabs
+    function switchView(viewName) {
+      ['create', 'reels', 'pricing'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const nav = document.getElementById('nav-' + v);
+        if (v === viewName) {
+          el.classList.remove('hidden');
+          if (nav) nav.className = "text-brand-volt hover:text-white transition";
+        } else {
+          el.classList.add('hidden');
+          if (nav) nav.className = "text-slate-400 hover:text-white transition";
+        }
+      });
+      if (viewName === 'reels') loadReels();
+      if (viewName === 'pricing') loadPackages();
+    }
+
+    // Demo URL
+    function insertDemoUrl() {
+      document.getElementById('stream-url').value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    }
+
+    // Auth state check
+    async function initAuth() {
+      if (!currentToken) {
+        updateAuthUI(null);
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          currentUser = user;
+          updateAuthUI(user);
+        } else {
+          logout();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function updateAuthUI(user) {
+      const authBtns = document.getElementById('auth-buttons');
+      const balanceBox = document.getElementById('user-balance-box');
+      const profileBox = document.getElementById('user-profile-box');
+      const creditsDisplay = document.getElementById('user-credits');
+      const emailDisplay = document.getElementById('user-email-display');
+
+      if (user) {
+        authBtns.classList.add('hidden');
+        balanceBox.classList.remove('hidden');
+        profileBox.classList.remove('hidden');
+        creditsDisplay.innerText = user.credits;
+        emailDisplay.innerText = user.email;
+      } else {
+        authBtns.classList.remove('hidden');
+        balanceBox.classList.add('hidden');
+        profileBox.classList.add('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('chik_token');
+      currentToken = null;
+      currentUser = null;
+      updateAuthUI(null);
+    }
+
+    // Modals
+    function openAuthModal(mode) {
+      authMode = mode;
+      setAuthTab(mode);
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-error').classList.add('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function setAuthTab(mode) {
+      authMode = mode;
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg = document.getElementById('tab-register');
+      const title = document.getElementById('auth-modal-title');
+      const btn = document.getElementById('auth-submit-btn');
+
+      if (mode === 'login') {
+        tabLogin.className = "flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition";
+        tabReg.className = "flex-1 pb-3 text-slate-400 hover:text-white transition";
+        title.innerText = "Вход в ЧИК";
+        btn.innerText = "Войти";
+      } else {
+        tabReg.className = "flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition";
+        tabLogin.className = "flex-1 pb-3 text-slate-400 hover:text-white transition";
+        title.innerText = "Регистрация в ЧИК";
+        btn.innerText = "Создать аккаунт (+5 кредитов)";
+      }
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.classList.add('hidden');
+
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          currentToken = data.token;
+          currentUser = data.user;
+          localStorage.setItem('chik_token', currentToken);
+          updateAuthUI(currentUser);
+          closeAuthModal();
+        } else {
+          errorDiv.innerText = data.error || 'Ошибка входа';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorDiv.innerText = 'Сервер недоступен';
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    // Submit Job
+    async function handleStartJob(e) {
+      e.preventDefault();
+      if (!currentUser) {
+        openAuthModal('register');
+        return;
+      }
+
+      const streamUrl = document.getElementById('stream-url').value;
+      const mode = document.getElementById('job-mode').value;
+      const count = parseInt(document.getElementById('job-count').value);
+      const gameplay = document.getElementById('job-gameplay').value;
+
+      try {
+        const res = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + currentToken
+          },
+          body: JSON.stringify({
+            stream_url: streamUrl,
+            mode: mode,
+            count: count,
+            gameplay_preset: gameplay,
+            subtitle_lang: 'ru'
+          })
+        });
+        const job = await res.json();
+        if (res.ok) {
+          showActiveJobWidget(job);
+        } else {
+          alert(job.error || 'Ошибка создания задачи');
+        }
+      } catch (err) {
+        alert('Ошибка связи с сервером');
+      }
+    }
+
+    function showActiveJobWidget(job) {
+      const widget = document.getElementById('active-job-card');
+      widget.classList.remove('hidden');
+      document.getElementById('active-job-title').innerText = `Нарезка: ${job.channel_name}`;
+      document.getElementById('active-job-url').innerText = job.stream_url;
+      updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди...');
+    }
+
+    function updateJobProgress(percent, stage) {
+      const bar = document.getElementById('active-progress-bar');
+      const pctText = document.getElementById('active-job-percent');
+      const stageText = document.getElementById('active-job-stage');
+      bar.style.width = percent + '%';
+      pctText.innerText = percent + '%';
+      stageText.innerText = stage;
+    }
+
+    // Load Reels
+    async function loadReels() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch('/api/reels', {
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        const reels = await res.json();
+        const container = document.getElementById('reels-container');
+        const empty = document.getElementById('reels-empty');
+        container.innerHTML = '';
+
+        if (!reels || reels.length === 0) {
+          empty.classList.remove('hidden');
+          return;
+        }
+        empty.classList.add('hidden');
+
+        reels.forEach(r => {
+          const card = document.createElement('div');
+          card.className = "bg-brand-surface border border-brand-border hover:border-brand-volt/50 rounded-2xl overflow-hidden transition duration-200 flex flex-col group cursor-pointer shadow-lg";
+          card.onclick = () => openPlayerModal(r);
+          card.innerHTML = `
+            <div class="reel-aspect bg-black relative overflow-hidden flex items-center justify-center">
+              <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"></video>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono font-bold text-brand-volt border border-brand-volt/30">
+                🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
+              </div>
+              <div class="absolute bottom-3 left-3 right-3">
+                <h4 class="font-bold text-sm text-white line-clamp-2">${r.title}</h4>
+                <p class="text-[11px] text-slate-400 font-mono mt-1">${Math.round(r.duration_secs)} сек • 9:16 Shorts</p>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-brand-volt/90 text-black flex items-center justify-center text-lg absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-volt">
+                ▶
+              </div>
+            </div>
+            <div class="p-3 border-t border-brand-border bg-brand-surface flex items-center justify-between text-xs">
+              <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-slate-400'}">
+                ${r.is_unlocked ? '✅ Готов к выгрузке' : '🔒 Нужен 1 кредит'}
+              </span>
+              <span class="text-brand-volt font-bold">Смотреть →</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Modal Player
+    function openPlayerModal(reel) {
+      currentModalReel = reel;
+      const modal = document.getElementById('player-modal');
+      const video = document.getElementById('modal-video');
+      const title = document.getElementById('modal-title');
+      const desc = document.getElementById('modal-desc');
+      const tags = document.getElementById('modal-tags');
+      const hype = document.getElementById('modal-hype-score');
+      const downloadBtn = document.getElementById('modal-download-btn');
+
+      video.src = `/api/reels/${reel.id}/video`;
+      title.innerText = reel.title;
+      desc.innerText = reel.description || 'Автоматически сгенерированное описание из транскрипта стрима.';
+      tags.innerText = reel.tags;
+      hype.innerText = `🔥 ХАЙП-СКОР ${Math.round(reel.hype_score * 100)}%`;
+
+      if (reel.is_unlocked) {
+        downloadBtn.innerHTML = `<span>⬇️ Скачать чистый Full HD</span>`;
+      } else {
+        downloadBtn.innerHTML = `<span>🔓 Разблокировать за 1 кредит</span>`;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closePlayerModal() {
+      const modal = document.getElementById('player-modal');
+      const video = document.getElementById('modal-video');
+      video.pause();
+      video.src = '';
+      modal.classList.add('hidden');
+    }
+
+    function copyModalCaptions() {
+      if (!currentModalReel) return;
+      const text = `${currentModalReel.title}\n\n${currentModalReel.description}\n\n${currentModalReel.tags}`;
+      navigator.clipboard.writeText(text);
+      alert('Текст, описание и теги скопированы в буфер!');
+    }
+
+    async function handleModalDownload() {
+      if (!currentModalReel) return;
+      if (currentModalReel.is_unlocked) {
+        // Direct download
+        const a = document.createElement('a');
+        a.href = `/api/reels/${currentModalReel.id}/video`;
+        a.download = `${currentModalReel.title}.mp4`;
+        a.click();
+      } else {
+        // Unlock with credit
+        try {
+          const res = await fetch('/api/reels/unlock', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + currentToken
+            },
+            body: JSON.stringify({ reel_id: currentModalReel.id })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            currentModalReel.is_unlocked = true;
+            currentUser.credits = data.credits;
+            updateAuthUI(currentUser);
+            openPlayerModal(currentModalReel);
+            alert('Рилс разблокирован! Теперь вы можете скачать файл.');
+          } else {
+            alert(data.error || 'Недостаточно кредитов');
+            openTopupModal();
+          }
+        } catch (e) {
+          alert('Ошибка связи с сервером');
+        }
+      }
+    }
+
+    // Load Packages
+    async function loadPackages() {
+      try {
+        const res = await fetch('/api/billing/packages');
+        const packs = await res.json();
+        const grid = document.getElementById('packages-grid');
+        grid.innerHTML = '';
+
+        packs.forEach(p => {
+          const card = document.createElement('div');
+          card.className = `bg-brand-surface border ${p.is_popular ? 'border-brand-volt glow-volt' : 'border-brand-border'} rounded-2xl p-6 sm:p-8 flex flex-col justify-between space-y-6 relative overflow-hidden`;
+          card.innerHTML = `
+            ${p.is_popular ? '<div class="absolute -right-12 top-6 bg-brand-volt text-black text-[10px] font-black uppercase tracking-wider py-1 px-12 transform rotate-45">Хит 🔥</div>' : ''}
+            <div class="space-y-4">
+              <h3 class="text-xl font-black text-white">${p.name}</h3>
+              <p class="text-xs text-slate-400">${p.description}</p>
+              <div class="pt-2">
+                <span class="text-3xl font-black text-white font-mono">${p.price_rub} ₽</span>
+                <span class="text-xs text-slate-400 ml-1">/ ${p.credits} клипов</span>
+              </div>
+            </div>
+            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-brand-volt text-black hover:bg-yellow-300' : 'bg-brand-surfaceHover text-white hover:bg-brand-border'} font-extrabold text-sm py-3 rounded-xl transition">
+              Купить пакет
+            </button>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openTopupModal() {
+      switchView('pricing');
+    }
+
+    async function handleTopup(packageId) {
+      if (!currentUser) {
+        openAuthModal('register');
+        return;
+      }
+      try {
+        const res = await fetch('/api/billing/topup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + currentToken
+          },
+          body: JSON.stringify({ package_id: packageId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          currentUser.credits = data.credits;
+          updateAuthUI(currentUser);
+          alert(data.message);
+          switchView('create');
+        } else {
+          alert(data.error || 'Ошибка пополнения');
+        }
+      } catch (e) {
+        alert('Ошибка связи с сервером');
+      }
+    }
+
+    // WebSocket connection for real-time live events
+    function connectWs() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${proto}//${location.host}/api/ws`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'job_progress') {
+            updateJobProgress(msg.percent, msg.stage);
+          } else if (msg.type === 'job_status') {
+            if (msg.status === 'completed') {
+              updateJobProgress(100, 'Готово! Клипы нарезаны.');
+              loadReels();
+            } else if (msg.status === 'failed') {
+              updateJobProgress(100, 'Ошибка: ' + (msg.error || 'не удалось нарезать'));
+            }
+          } else if (msg.type === 'reel_created') {
+            loadReels();
+          } else if (msg.type === 'balance_updated') {
+            if (currentUser && currentUser.id === msg.user_id) {
+              currentUser.credits = msg.new_balance;
+              updateAuthUI(currentUser);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWs, 3000); // reconnect
+      };
+    }
+
+    // Startup
+    initAuth();
+    connectWs();
+  </script>
+</body>
+</html>
