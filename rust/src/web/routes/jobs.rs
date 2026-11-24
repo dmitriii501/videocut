@@ -131,14 +131,24 @@ pub async fn list_jobs(
 }
 
 pub async fn get_job(
-    _headers: HeaderMap,
+    headers: HeaderMap,
     Path(job_id): Path<String>,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    // Check if job exists
+    let user = match extract_user(&headers, &state) {
+        Some(u) => u,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({"error": "Не авторизован"})),
+            );
+        }
+    };
+
+    // Check if job exists and belongs to the user
     let job = match state.db.get_job(&job_id) {
-        Ok(Some(j)) => j,
-        Ok(None) => {
+        Ok(Some(j)) if j.user_id == user.id => j,
+        Ok(_) => {
             return (
                 StatusCode::NOT_FOUND,
                 Json(serde_json::json!({"error": "Задача не найдена"})),

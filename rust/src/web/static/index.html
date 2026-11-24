@@ -157,7 +157,7 @@
           [01] Студия нарезки
         </button>
         <button onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
-          [02] Мои клипы <span id="nav-reels-count" class="ml-1 text-[10px] bg-chik-black px-1.5 py-0.5 border border-chik-border text-chik-orange">3</span>
+          [02] Мои клипы <span id="nav-reels-count" class="ml-1 text-[10px] bg-chik-black px-1.5 py-0.5 border border-chik-border text-chik-orange">0</span>
         </button>
         <button onclick="switchView('pricing')" id="nav-pricing" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
           [03] Тарифы
@@ -270,16 +270,14 @@
               
               <!-- Phone Shell -->
               <div class="aspect-reel bg-black relative overflow-hidden rounded border border-chik-borderLight shadow-2xl">
-                <!-- Video Element with autoplay / loop -->
-                <video 
-                  id="landing-hero-video"
-                  src="/api/reels/reel_001_hype/video" 
-                  autoplay 
-                  muted 
-                  loop 
-                  playsinline 
-                  class="w-full h-full object-cover"
-                ></video>
+                <!-- Animated preview placeholder (no public sample reel) -->
+                <div id="landing-hero-video" class="absolute inset-0 w-full h-full overflow-hidden bg-gradient-to-br from-zinc-900 via-chik-surface to-black">
+                  <div class="absolute inset-0 opacity-20" style="background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.12) 0px,rgba(255,255,255,0.12) 1px,transparent 1px,transparent 4px);"></div>
+                  <div class="absolute inset-x-0 h-24 bg-gradient-to-b from-transparent via-chik-orange/25 to-transparent animate-pulse" style="top:35%;"></div>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="font-mono text-[10px] text-chik-orange/70 tracking-widest uppercase">CHIK PREVIEW</span>
+                  </div>
+                </div>
                 
                 <!-- Viewfinder Live Overlay -->
                 <div class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
@@ -482,7 +480,7 @@
           </button>
           <button onclick="switchView('reels')" class="text-white bg-chik-surface border border-chik-border hover:border-chik-orange px-3.5 py-2 uppercase transition flex items-center space-x-2">
             <span>Мои клипы</span>
-            <span id="studio-reels-badge" class="bg-chik-orange text-white text-[10px] font-bold px-1.5 py-0.2">3</span>
+            <span id="studio-reels-badge" class="bg-chik-orange text-white text-[10px] font-bold px-1.5 py-0.2">0</span>
           </button>
         </div>
       </div>
@@ -561,14 +559,11 @@
               <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [04] НИЖНИЙ ГЕЙМПЛЕЙ (9:16)
               </label>
-              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
-                <option value="subway">SUBWAY SURFERS (Классика)</option>
-                <option value="minecraft">MINECRAFT PARKOUR</option>
-                <option value="gta">GTA V MEGA-RAMP</option>
-                <option value="asmr">SOAP CUTTING / ASMR</option>
-                <option value="none">БЕЗ ИГРЫ (Вебка + Стрим)</option>
-              </select>
-              <p class="font-mono text-[10px] text-chik-muted">Удерживает внимание зрителя в ленте рекомендаций TikTok и Shorts.</p>
+              <div class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 flex items-center justify-between">
+                <span>ВЕБКА + СТРИМ (без игры)</span>
+                <span class="text-[9px] text-chik-muted uppercase">скоро</span>
+              </div>
+              <p class="font-mono text-[10px] text-chik-muted">Сейчас в нижнюю половину кадра выводится лицо стримера (для витуберов — лицо аватара). Геймплей-фоны появятся позже.</p>
             </div>
 
             <!-- Matrix 5: Mid-roll banner -->
@@ -862,11 +857,22 @@
     setInterval(updateClock, 1000);
     updateClock();
 
+    // Build an authenticated media URL (media elements can't send headers).
+    function videoUrl(id) {
+      const t = currentToken ? '?token=' + encodeURIComponent(currentToken) : '';
+      return `/api/reels/${id}/video${t}`;
+    }
+
     // Switch View
-    function switchView(viewName) {
-      playClickSound();
+    function switchView(viewName) {      playClickSound();
       const views = ['landing', 'studio', 'reels', 'pricing'];
       if (!views.includes(viewName)) viewName = 'landing';
+
+      // Studio is account-only: require a logged-in session.
+      if ((viewName === 'studio' || viewName === 'reels') && !currentToken) {
+        openAuthModal('login');
+        viewName = 'landing';
+      }
 
       views.forEach(v => {
         const el = document.getElementById('view-' + v);
@@ -951,10 +957,17 @@
 
     function logout() {
       playClickSound();
+      if (currentToken) {
+        fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        }).catch(() => {});
+      }
       localStorage.removeItem('chik_token');
       currentToken = null;
       currentUser = null;
       updateAuthUI(null);
+      switchView('landing');
     }
 
     // Modals
@@ -1036,7 +1049,6 @@
       const streamUrl = document.getElementById('stream-url').value;
       const mode = document.getElementById('job-mode').value;
       const count = parseInt(document.getElementById('job-count').value);
-      const gameplay = document.getElementById('job-gameplay').value;
       const bannerEl = document.getElementById('job-banner');
       const banner = bannerEl ? bannerEl.checked : true;
 
@@ -1051,7 +1063,6 @@
             stream_url: streamUrl,
             mode: mode,
             count: count,
-            gameplay_preset: gameplay,
             subtitle_lang: 'ru',
             banner: banner
           })
@@ -1144,7 +1155,7 @@
             card.onclick = () => openPlayerModal(r);
             card.innerHTML = `
               <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
-                <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
+                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
                 <div class="absolute top-2.5 right-2.5 bg-chik-black/95 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-orange border border-chik-orange/40">
                   🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
@@ -1178,7 +1189,7 @@
             mini.onclick = () => openPlayerModal(r);
             mini.innerHTML = `
               <div class="w-14 h-20 bg-zinc-950 border border-zinc-800 relative flex-shrink-0 overflow-hidden flex items-center justify-center">
-                <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover"></video>
+                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" class="w-full h-full object-cover"></video>
                 <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-xs text-white opacity-0 group-hover:opacity-100 transition">▶</span>
               </div>
               <div class="overflow-hidden flex-1 space-y-1">
@@ -1208,7 +1219,7 @@
       const hype = document.getElementById('modal-hype-score');
       const downloadBtn = document.getElementById('modal-download-btn');
 
-      video.src = `/api/reels/${reel.id}/video`;
+      video.src = videoUrl(reel.id);
       title.innerText = reel.title;
       desc.innerText = reel.description || 'Автоматически сформированный транскрипт момента.';
       tags.innerText = reel.tags;
@@ -1245,7 +1256,7 @@
       if (!currentModalReel) return;
       if (currentModalReel.is_unlocked) {
         const a = document.createElement('a');
-        a.href = `/api/reels/${currentModalReel.id}/video`;
+        a.href = videoUrl(currentModalReel.id);
         a.download = `${currentModalReel.title}.mp4`;
         a.click();
       } else {

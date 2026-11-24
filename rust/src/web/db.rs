@@ -141,6 +141,21 @@ impl Database {
         Ok(())
     }
 
+    pub fn delete_session(&self, token: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM sessions WHERE token = ?1", params![token])?;
+        Ok(())
+    }
+
+    pub fn update_password_hash(&self, user_id: &str, hash: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE users SET password_hash = ?1 WHERE id = ?2",
+            params![hash, user_id],
+        )?;
+        Ok(())
+    }
+
     pub fn get_user_by_token(&self, token: &str) -> Result<Option<User>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(

@@ -1,9 +1,11 @@
-//! Auto-detect the streamer webcam overlay panel using TypeSafe ("jev").
+//! Auto-detect the streamer's face using TypeSafe ("jev").
 //!
 //! TypeSafe's System One endpoint (POST /v1/systemone) localizes an object from
-//! a natural-language instruction and returns a normalized bbox. We sample a
-//! few frames and aggregate the boxes into one static panel rect, cached per
-//! source window.
+//! a natural-language instruction and returns a normalized bbox. We ask it for
+//! the **face** of the person on screen (or the avatar/character face for a
+//! VTuber), expand that tight box into a head-and-shoulders framing, then sample
+//! a few frames and aggregate the boxes into one static rect, cached per source
+//! window.
 
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -15,8 +17,9 @@ use crate::utils::{duration, ensure_dir, log, retry, short_hash};
 /// Fallback panel (relative coords) if detection is unavailable/unreliable.
 pub const DEFAULT_PANEL: (f64, f64, f64, f64) = (0.70, 0.00, 1.00, 1.00);
 
-const QUESTION_INSTRUCTIONS: &str = "the webcam/facecam video overlay panel of the \
-    streamer, usually a rectangle in a corner of the screen showing a person";
+const QUESTION_INSTRUCTIONS: &str = "the face of the streamer — the head/face of the person \
+    shown on screen. If the streamer is a VTuber, use the face of their avatar/character. \
+    Return a tight box around the face itself, not the whole webcam panel or its background";
 
 /// Webcam panel rect in relative source coords (0..1).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -174,16 +177,40 @@ fn ask_box(api_key: &str, img: &[u8]) -> Result<Option<(f64, f64, f64, f64)>> {
     Ok(parse_box(&resp))
 }
 
+/// Expand a tight face box into a head-and-shoulders framing, since the render
+/// crops the whole "panel" band and a bare face would be cropped too tightly.
+fn expand_face_box(b: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
+    let (x0, y0, x1, y1) = b;
+    let fw = (x1 - x0).max(0.01);
+    let fh = (y1 - y0).max(0.01);
+    let cx = (x0 + x1) / 2.0;
+
+    // Wider than the face and taller (down to the shoulders).
+    let pw = fw * 2.6;
+    let ph = fh * 3.2;
+    let px0 = cx - pw / 2.0;
+    let px1 = cx + pw / 2.0;
+    let py0 = y0 - fh * 0.45;
+    let py1 = py0 + ph;
+
+    (
+        px0.clamp(0.0, 1.0),
+        py0.clamp(0.0, 1.0),
+        px1.clamp(0.0, 1.0),
+        py1.clamp(0.0, 1.0),
+    )
+}
+
 fn plausible(b: (f64, f64, f64, f64)) -> bool {
     let (x0, y0, x1, y1) = b;
     let (w, h) = (x1 - x0, y1 - y0);
-    if w < 0.04 || h < 0.04 {
+    if w < 0.02 || h < 0.02 {
         return false;
     }
-    if w > 0.70 || h > 0.90 {
+    if w > 0.98 || h > 0.98 {
         return false;
     }
-    if w * h > 0.55 {
+    if w * h > 0.92 {
         return false;
     }
     true
@@ -250,12 +277,12 @@ fn store_cached(path: &Path, panel: &Panel) {
     }
 }
 
-/// Detect the webcam panel for a specific clip window `[start, start+dur]`.
+/// Detect the streamer face panel for a specific clip window `[start, start+dur]`.
 pub fn detect_panel_window(source: &Path, start: f64, dur: f64) -> Panel {
     let _ = ensure_dir(&config::panels());
     let cache = window_cache_path(source, start);
     if let Some(p) = load_cached(&cache) {
-        log(format!("webcam panel (cached window @ {start:.0}s): {:?}", p.as_tuple()));
+        log(format!("face panel (cached window @ {start:.0}s): {:?}", p.as_tuple()));
         return p;
     }
 
@@ -277,14 +304,15 @@ pub fn detect_panel_window(source: &Path, start: f64, dur: f64) -> Panel {
         let box_opt = retry(|| ask_box(&key, &img), 4, 2.0, &format!("typesafe box @ {t:.1}s"));
         match box_opt {
             Ok(Some(b)) if plausible(b) => {
+                let face = expand_face_box(b);
                 log(format!(
-                    "webcam box @ {t:.1}s -> x[{:.2},{:.2}] y[{:.2},{:.2}]",
-                    b.0, b.2, b.1, b.3
+                    "face @ {t:.1}s -> face x[{:.2},{:.2}] y[{:.2},{:.2}] => panel x[{:.2},{:.2}] y[{:.2},{:.2}]",
+                    b.0, b.2, b.1, b.3, face.0, face.2, face.1, face.3
                 ));
-                boxes.push(b);
+                boxes.push(face);
             }
             Ok(Some(b)) => log(format!(
-                "webcam box @ {t:.1}s rejected (implausible): x[{:.2},{:.2}] y[{:.2},{:.2}]",
+                "face @ {t:.1}s rejected (implausible): x[{:.2},{:.2}] y[{:.2},{:.2}]",
                 b.0, b.2, b.1, b.3
             )),
             Ok(None) => {}
@@ -293,17 +321,17 @@ pub fn detect_panel_window(source: &Path, start: f64, dur: f64) -> Panel {
     }
 
     if boxes.is_empty() {
-        log("webcam window detect: no plausible box; falling back to whole-source panel");
+        log("face window detect: no plausible box; falling back to whole-source panel");
         return detect_panel(source);
     }
 
-    let panel = Panel::with_source(median_box(&boxes), "typesafe");
+    let panel = Panel::with_source(median_box(&boxes), "face");
     store_cached(&cache, &panel);
-    log(format!("webcam panel window @ {start:.0}s: {:?}", panel.as_tuple()));
+    log(format!("face panel window @ {start:.0}s: {:?}", panel.as_tuple()));
     panel
 }
 
-/// Detect the webcam panel for a whole source, cached.
+/// Detect the streamer face panel for a whole source, cached.
 pub fn detect_panel(source: &Path) -> Panel {
     let _ = ensure_dir(&config::panels());
     let key_hash = short_hash(&format!(
@@ -320,14 +348,14 @@ pub fn detect_panel(source: &Path) -> Panel {
     ));
     let cache = config::panels().join(format!("{key_hash}.json"));
     if let Some(p) = load_cached(&cache) {
-        log(format!("webcam panel (cached): {:?}", p.as_tuple()));
+        log(format!("face panel (cached): {:?}", p.as_tuple()));
         return p;
     }
 
     let key = match config::typesafe_api_key() {
         Some(k) => k,
         None => {
-            log("webcam auto-detect: no TypeSafe API key; using default panel");
+            log("face auto-detect: no TypeSafe API key; using default panel");
             return Panel::new(DEFAULT_PANEL);
         }
     };
@@ -349,25 +377,25 @@ pub fn detect_panel(source: &Path) -> Panel {
             }
         };
         match retry(|| ask_box(&key, &img), 4, 2.0, &format!("typesafe box @ {t:.1}s")) {
-            Ok(Some(b)) if plausible(b) => boxes.push(b),
+            Ok(Some(b)) if plausible(b) => boxes.push(expand_face_box(b)),
             _ => {}
         }
     }
 
     if boxes.is_empty() {
-        log("webcam auto-detect: all samples failed; using default panel");
+        log("face auto-detect: all samples failed; using default panel");
         return Panel::new(DEFAULT_PANEL);
     }
 
-    let panel = Panel::with_source(median_box(&boxes), "typesafe");
+    let panel = Panel::with_source(median_box(&boxes), "face");
     if (panel.x1 - panel.x0) < 0.10 || (panel.y1 - panel.y0) < 0.10 {
         log(format!(
-            "webcam auto-detect: implausible box {:?}; using default",
+            "face auto-detect: implausible box {:?}; using default",
             panel.as_tuple()
         ));
         return Panel::new(DEFAULT_PANEL);
     }
     store_cached(&cache, &panel);
-    log(format!("webcam panel detected: {:?}", panel.as_tuple()));
+    log(format!("face panel detected: {:?}", panel.as_tuple()));
     panel
 }

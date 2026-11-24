@@ -10,20 +10,86 @@ use crate::web::models::{AuthResponse, LoginRequest, RegisterRequest, User, User
 use crate::web::AppState;
 
 pub fn hash_password(password: &str) -> String {
+    // Per-user random salt + iterated SHA-256 (no extra crate needed).
+    let salt = format!(
+        "{}{}",
+        Uuid::new_v4().simple(),
+        Uuid::new_v4().simple()
+    );
+    let digest = iterate_hash(&salt, password);
+    format!("v1${salt}${digest}")
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        let _ = write!(s, "{b:02x}");
+    }
+    s
+}
+
+fn iterate_hash(salt: &str, password: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(salt.as_bytes());
+    hasher.update(password.as_bytes());
+    let mut out = hasher.finalize();
+    for _ in 0..100_000 {
+        let mut h = Sha256::new();
+        h.update(out);
+        h.update(salt.as_bytes());
+        out = h.finalize();
+    }
+    to_hex(&out)
+}
+
+fn constant_eq(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
+/// Verify a password against a stored hash, supporting both the current
+/// `v1$salt$hash` format and the legacy static-salt format.
+pub fn verify_password(stored: &str, password: &str) -> bool {
+    if let Some(rest) = stored.strip_prefix("v1$") {
+        if let Some((salt, expected)) = rest.split_once('$') {
+            return constant_eq(&iterate_hash(salt, password), expected);
+        }
+    }
     let mut hasher = Sha256::new();
     hasher.update(b"chik_salt_2026_");
     hasher.update(password.as_bytes());
-    format!("{:x}", hasher.finalize())
+    constant_eq(&format!("{:x}", hasher.finalize()), stored)
+}
+
+/// Extract a bearer token from the Authorization header, or (for media
+/// elements that cannot set headers) from a `?token=` query parameter.
+pub fn token_from(headers: &HeaderMap, query_token: Option<&str>) -> Option<String> {
+    if let Some(auth_header) = headers.get("Authorization").and_then(|v| v.to_str().ok()) {
+        if let Some(stripped) = auth_header.strip_prefix("Bearer ") {
+            return Some(stripped.to_string());
+        }
+        if !auth_header.is_empty() {
+            return Some(auth_header.to_string());
+        }
+    }
+    query_token.map(|t| t.to_string())
 }
 
 pub fn extract_user(headers: &HeaderMap, state: &AppState) -> Option<User> {
-    let auth_header = headers.get("Authorization")?.to_str().ok()?;
-    let token = if let Some(stripped) = auth_header.strip_prefix("Bearer ") {
-        stripped
-    } else {
-        auth_header
-    };
-    state.db.get_user_by_token(token).ok()?
+    extract_user_q(headers, None, state)
+}
+
+pub fn extract_user_q(headers: &HeaderMap, query_token: Option<&str>, state: &AppState) -> Option<User> {
+    let token = token_from(headers, query_token)?;
+    state.db.get_user_by_token(&token).ok()?
 }
 
 pub async fn register(
@@ -89,11 +155,18 @@ pub async fn login(
         }
     };
 
-    if user.password_hash != hash_password(&payload.password) {
+    if !verify_password(&user.password_hash, &payload.password) {
         return (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({"error": "Неверный email или пароль"})),
         );
+    }
+
+    // Opportunistically upgrade legacy hashes to the salted format.
+    if !user.password_hash.starts_with("v1$") {
+        let _ = state
+            .db
+            .update_password_hash(&user.id, &hash_password(&payload.password));
     }
 
     let token = Uuid::new_v4().to_string();
@@ -127,4 +200,15 @@ pub async fn me(
         StatusCode::OK,
         Json(serde_json::to_value(UserPublic::from(user)).unwrap()),
     )
+}
+
+/// Invalidate the current session token server-side.
+pub async fn logout(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    if let Some(token) = token_from(&headers, None) {
+        let _ = state.db.delete_session(&token);
+    }
+    (StatusCode::OK, Json(serde_json::json!({"success": true})))
 }

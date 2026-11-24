@@ -2,14 +2,20 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 
 use axum::body::Body;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use serde::Deserialize;
 
 use crate::web::models::{UnlockReelRequest, WebEvent};
-use crate::web::routes::auth::extract_user;
+use crate::web::routes::auth::{extract_user, extract_user_q};
 use crate::web::AppState;
+
+#[derive(Debug, Deserialize)]
+pub struct VideoQuery {
+    pub token: Option<String>,
+}
 
 pub async fn list_reels(
     headers: HeaderMap,
@@ -36,11 +42,24 @@ pub async fn list_reels(
 
 pub async fn get_reel(
     Path(reel_id): Path<String>,
+    headers: HeaderMap,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
+    let user = match extract_user(&headers, &state) {
+        Some(u) => u,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({"error": "Не авторизован"})),
+            );
+        }
+    };
+
     match state.db.get_reel(&reel_id) {
-        Ok(Some(reel)) => (StatusCode::OK, Json(serde_json::to_value(reel).unwrap())),
-        Ok(None) => (
+        Ok(Some(reel)) if reel.user_id == user.id => {
+            (StatusCode::OK, Json(serde_json::to_value(reel).unwrap()))
+        }
+        Ok(Some(_)) | Ok(None) => (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"error": "Рилс не найден"})),
         ),
@@ -67,7 +86,7 @@ pub async fn unlock_reel(
     };
 
     let reel = match state.db.get_reel(&payload.reel_id) {
-        Ok(Some(r)) => r,
+        Ok(Some(r)) if r.user_id == user.id => r,
         _ => {
             return (
                 StatusCode::NOT_FOUND,
@@ -124,14 +143,22 @@ pub async fn unlock_reel(
     )
 }
 
-/// Stream video file with HTTP 206 Partial Content support for smooth seeking in browsers
+/// Stream video file with HTTP 206 Partial Content support for smooth seeking in browsers.
+/// Accepts the session token either as a bearer header or a `?token=` query param
+/// (media elements cannot set custom headers).
 pub async fn stream_video(
     Path(reel_id): Path<String>,
     headers: HeaderMap,
+    Query(query): Query<VideoQuery>,
     State(state): State<AppState>,
 ) -> Response {
+    let user = match extract_user_q(&headers, query.token.as_deref(), &state) {
+        Some(u) => u,
+        None => return (StatusCode::UNAUTHORIZED, "Не авторизован").into_response(),
+    };
+
     let reel = match state.db.get_reel(&reel_id) {
-        Ok(Some(r)) => r,
+        Ok(Some(r)) if r.user_id == user.id => r,
         _ => {
             return (StatusCode::NOT_FOUND, "Video not found").into_response();
         }

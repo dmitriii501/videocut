@@ -60,6 +60,7 @@ pub fn run(bind_addr: String, port: u16) -> Result<i32> {
             .route("/api/auth/register", post(routes::auth::register))
             .route("/api/auth/login", post(routes::auth::login))
             .route("/api/auth/me", get(routes::auth::me))
+            .route("/api/auth/logout", post(routes::auth::logout))
             .route("/api/jobs", post(routes::jobs::create_job).get(routes::jobs::list_jobs))
             .route("/api/jobs/{id}", get(routes::jobs::get_job))
             .route("/api/jobs/{id}/stop", post(routes::jobs::stop_job))
