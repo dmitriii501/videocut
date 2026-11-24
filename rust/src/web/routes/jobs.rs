@@ -93,6 +93,7 @@ pub async fn create_job(
     let task = JobTask {
         job: job.clone(),
         count: payload.count.max(1),
+        banner: payload.banner,
         should_stop,
     };
 

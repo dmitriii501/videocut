@@ -59,6 +59,8 @@ pub struct LiveJob {
     pub max_low_conf_frac: f64,
     pub no_subs: bool,
     pub subtitle_lang: Option<String>,
+    /// Inject the animated mid-roll promo banner into each reel.
+    pub banner: bool,
     pub webcam_spec: Option<String>,
     pub send_telegram: bool,
     pub review_dir: Option<PathBuf>,
@@ -110,6 +112,7 @@ impl Default for LiveJob {
             max_low_conf_frac: 0.35,
             no_subs: false,
             subtitle_lang: None,
+            banner: config::banner_enabled(),
             webcam_spec: None,
             send_telegram: false,
             review_dir: None,
@@ -402,6 +405,7 @@ pub fn run_live(job: &LiveJob) -> Result<Vec<PathBuf>> {
                 send_telegram: job.send_telegram,
                 words: clip_words,
                 subtitle_lang: job.subtitle_lang.clone(),
+                banner: job.banner,
                 ..Default::default()
             };
             reel_job.auto_count = 0;

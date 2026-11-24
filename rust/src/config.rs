@@ -129,6 +129,28 @@ pub fn subtitle_words_per_caption() -> usize {
     env_parse("SUBTITLE_WORDS", 4)
 }
 
+// --- Banner (mid-roll promo) -------------------------------------------------
+
+/// Whether to inject the animated CHIK promo banner mid-clip by default.
+pub fn banner_enabled() -> bool {
+    env_parse("STREAMREELS_BANNER", true)
+}
+
+/// Site line shown on the banner (e.g. "chik.cut").
+pub fn banner_site() -> String {
+    env_str("STREAMREELS_BANNER_SITE", "chik.cut")
+}
+
+/// On-screen duration of the banner, in seconds.
+pub fn banner_duration() -> f64 {
+    env_parse("STREAMREELS_BANNER_DURATION", 3.0)
+}
+
+/// Optional explicit font file for banner text (else auto-detected).
+pub fn banner_font_file() -> Option<String> {
+    env_opt("STREAMREELS_BANNER_FONT")
+}
+
 // --- Description -------------------------------------------------------------
 
 pub fn default_hashtags() -> Vec<String> {

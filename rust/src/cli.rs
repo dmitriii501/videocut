@@ -61,6 +61,14 @@ pub struct Cli {
     #[arg(long = "subtitle-lang", value_name = "LANG")]
     pub subtitle_lang: Option<String>,
 
+    /// Force the animated mid-roll CHIK banner on (overrides the default).
+    #[arg(long = "banner", overrides_with = "no_banner")]
+    pub banner: bool,
+
+    /// Disable the animated mid-roll CHIK banner.
+    #[arg(long = "no-banner")]
+    pub no_banner: bool,
+
     /// Send each finished reel to Telegram.
     #[arg(long)]
     pub telegram: bool,
@@ -228,6 +236,16 @@ pub fn main() -> i32 {
     }
 }
 
+fn banner_flag(cli: &Cli) -> bool {
+    if cli.no_banner {
+        false
+    } else if cli.banner {
+        true
+    } else {
+        config::banner_enabled()
+    }
+}
+
 fn run(cli: Cli) -> Result<i32> {
     let webcam_spec = cli.webcam_spec();
 
@@ -267,6 +285,7 @@ fn run(cli: Cli) -> Result<i32> {
             subtitle_lang: cli.subtitle_lang.clone(),
             webcam_spec,
             send_telegram: cli.telegram,
+            banner: banner_flag(&cli),
             ..Default::default()
         };
         log(format!(
@@ -319,6 +338,7 @@ fn run(cli: Cli) -> Result<i32> {
         words: None,
         subtitle_lang: cli.subtitle_lang.clone(),
         progress: None,
+        banner: banner_flag(&cli),
     };
     let outs = run_job(&job)?;
     log("produced:");

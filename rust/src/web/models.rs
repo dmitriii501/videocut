@@ -102,6 +102,9 @@ pub struct CreateJobRequest {
     #[serde(default = "default_gameplay")]
     pub gameplay_preset: String, // "minecraft", "subway", "gta", "asmr", "none"
     pub subtitle_lang: Option<String>,
+    /// Override the mid-roll promo banner (None = service default).
+    #[serde(default)]
+    pub banner: Option<bool>,
 }
 
 fn default_mode() -> String {

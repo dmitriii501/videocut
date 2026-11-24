@@ -74,8 +74,148 @@ fn escape_filter_path(path: &Path) -> String {
         .replace('\'', "\\'")
 }
 
+/// Escape a path for `movie=` by wrapping it in single quotes (so `:` and `,`
+/// inside the path stay literal) and escaping only backslashes and quotes.
+fn escape_movie_path(path: &Path) -> String {
+    let s = path.to_string_lossy();
+    format!("'{}'", s.replace('\\', "\\\\").replace('\'', "\\'"))
+}
+
+/// A pre-rendered animated banner overlay to composite during [start, end].
+struct BannerOverlay {
+    path: PathBuf,
+    start: f64,
+    end: f64,
+}
+
+/// Cyrillic-capable bold fonts we try, in order.
+const BANNER_FONTS: &[&str] = &[
+    "/usr/share/fonts/noto/NotoSans-Bold.ttf",
+    "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+];
+
+fn resolve_banner_font() -> Option<PathBuf> {
+    if let Some(p) = config::banner_font_file() {
+        let pb = PathBuf::from(p);
+        if pb.exists() {
+            return Some(pb);
+        }
+    }
+    BANNER_FONTS.iter().map(PathBuf::from).find(|p| p.exists())
+}
+
+/// Escape text for a `drawtext=text='...'` value.
+fn escape_drawtext(text: &str) -> String {
+    text.replace('\\', "\\\\")
+        .replace('\'', "\\'")
+        .replace(':', "\\:")
+        .replace('%', "\\%")
+}
+
+/// Generate (once, cached) the animated alpha banner overlay as a qtrle `.mov`
+/// sized to the reel layout, then return its path.
+fn banner_overlay_asset(lay: Layout) -> Option<PathBuf> {
+    let dur = config::banner_duration();
+    if dur <= 0.0 {
+        return None;
+    }
+    let font = resolve_banner_font()?;
+    let dir = config::cache().join("assets");
+    ensure_dir(&dir).ok()?;
+    let path = dir.join(format!(
+        "banner-{}x{}-{:.2}.mov",
+        lay.width, lay.height, dur
+    ));
+    if path.exists() && path.metadata().map(|m| m.len() > 0).unwrap_or(false) {
+        return Some(path);
+    }
+
+    let ratio = lay.width as f64 / 720.0;
+    let fs1 = (110.0 * ratio).round() as u32;
+    let fs2 = (42.0 * ratio).round() as u32;
+    let fs3 = (64.0 * ratio).round() as u32;
+    let dy1 = (160.0 * ratio).round() as i32;
+    let dy2 = (20.0 * ratio).round() as i32;
+    let dy3 = (130.0 * ratio).round() as i32;
+    let font_s = escape_drawtext(&font.to_string_lossy());
+    let site = escape_drawtext(&config::banner_site());
+    let fade_out = (dur - 0.4).max(0.0);
+
+    let vf = format!(
+        "format=rgba,\
+         drawbox=x=0:y=0:w=iw:h=ih:color=0x090A0D@0.82:t=fill,\
+         drawbox=x=0:y=ih-28:w='iw*min(t/{dur}\\,1)':h=8:color=0xFF5500@0.95:t=fill,\
+         drawtext=fontfile='{font}':text='ЧИК • CHIK':fontcolor=0xEDEDED:fontsize={fs1}:x=(w-text_w)/2:y=(h/2)-{dy1},\
+         drawtext=fontfile='{font}':text='Автопилот вирусных нарезок':fontcolor=0x8A92A6:fontsize={fs2}:x=(w-text_w)/2:y=(h/2)+{dy2},\
+         drawtext=fontfile='{font}':text='{site}':fontcolor=0xFF5500:fontsize={fs3}:x=(w-text_w)/2:y=(h/2)+{dy3},\
+         fade=t=in:st=0:d=0.4:alpha=1,fade=t=out:st={fade_out}:d=0.4:alpha=1",
+        dur = dur,
+        font = font_s,
+        fs1 = fs1,
+        fs2 = fs2,
+        fs3 = fs3,
+        dy1 = dy1,
+        dy2 = dy2,
+        dy3 = dy3,
+        site = site,
+        fade_out = fade_out,
+    );
+
+    let src = format!(
+        "color=c=0x090A0D@0.0:s={}x{}:r={}:d={}",
+        lay.width,
+        lay.height,
+        config::fps(),
+        dur
+    );
+    log(format!(
+        "banner: rendering overlay {} ({}x{}, {:.1}s)",
+        path.display(),
+        lay.width,
+        lay.height,
+        dur
+    ));
+    let status = std::process::Command::new("ffmpeg")
+        .args([
+            "-y",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            &src,
+            "-vf",
+            &vf,
+            "-c:v",
+            "qtrle",
+        ])
+        .arg(&path)
+        .status();
+    match status {
+        Ok(s) if s.success() => Some(path),
+        Ok(s) => {
+            log(format!("banner: ffmpeg failed with {s}"));
+            None
+        }
+        Err(e) => {
+            log(format!("banner: failed to run ffmpeg: {e}"));
+            None
+        }
+    }
+}
+
 /// Build the filtergraph spec (input pad unlabeled -> [out]).
-fn build_spec(lay: Layout, src_w: u32, src_h: u32, ass_path: Option<&Path>, panel: Panel) -> String {
+fn build_spec(
+    lay: Layout,
+    src_w: u32,
+    src_h: u32,
+    ass_path: Option<&Path>,
+    panel: Panel,
+    banner: Option<&BannerOverlay>,
+) -> String {
     let w = lay.width;
     let top = lay.top_h;
     let bot = lay.bot_h;
@@ -93,9 +233,24 @@ fn build_spec(lay: Layout, src_w: u32, src_h: u32, ass_path: Option<&Path>, pane
 
     match ass_path {
         Some(p) if p.exists() && p.metadata().map(|m| m.len() > 0).unwrap_or(false) => {
-            spec.push_str(&format!("[vs]ass='{}'[out]", escape_filter_path(p)));
+            spec.push_str(&format!("[vs]ass='{}'[sub]", escape_filter_path(p)));
         }
-        _ => spec.push_str("[vs]null[out]"),
+        _ => spec.push_str("[vs]null[sub]"),
+    }
+
+    match banner {
+        Some(b) => {
+            // Play the alpha overlay once, shifted to start at b.start; then
+            // overlay it only during its window so the reel continues after.
+            spec.push_str(&format!(
+                ";movie={},setpts=PTS-STARTPTS+{start}/TB[bn];\
+                 [sub][bn]overlay=0:0:eof_action=pass:enable='between(t,{start},{end})'[out]",
+                escape_movie_path(&b.path),
+                start = b.start,
+                end = b.end,
+            ));
+        }
+        None => spec.push_str(";[sub]null[out]"),
     }
     spec
 }
@@ -298,6 +453,7 @@ pub fn render_reel(
     ass_path: Option<&Path>,
     out_path: &Path,
     panel: Option<Panel>,
+    banner: bool,
 ) -> Result<PathBuf> {
     ffmpeg::init().ok();
     if let Some(parent) = out_path.parent() {
@@ -307,7 +463,22 @@ pub fn render_reel(
     let lay = layout();
     let (src_w, src_h) = video_size(source)?;
     let panel = panel.unwrap_or(Panel::new(DEFAULT_PANEL));
-    let spec = build_spec(lay, src_w, src_h, ass_path, panel);
+
+    // Build the mid-roll banner overlay (centered in the clip) if enabled and
+    // the clip is long enough to fit it with a little breathing room.
+    let banner_dur = config::banner_duration();
+    let banner_overlay = if banner && banner_dur > 0.0 && dur > banner_dur + 1.0 {
+        let t_start = (dur - banner_dur) / 2.0;
+        banner_overlay_asset(lay).map(|path| BannerOverlay {
+            path,
+            start: t_start,
+            end: t_start + banner_dur,
+        })
+    } else {
+        None
+    };
+
+    let spec = build_spec(lay, src_w, src_h, ass_path, panel, banner_overlay.as_ref());
 
     let mut ictx = format::input(source).map_err(|e| anyhow!("open input: {e}"))?;
 

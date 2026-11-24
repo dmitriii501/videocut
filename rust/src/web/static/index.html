@@ -571,6 +571,19 @@
               <p class="font-mono text-[10px] text-chik-muted">Удерживает внимание зрителя в ленте рекомендаций TikTok и Shorts.</p>
             </div>
 
+            <!-- Matrix 5: Mid-roll banner -->
+            <div class="border border-chik-border bg-chik-card p-5 space-y-3">
+              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+                [05] РЕКЛАМНЫЙ БАННЕР ЧИК
+              </label>
+              <label class="flex items-center space-x-3 cursor-pointer select-none">
+                <input id="job-banner" type="checkbox" checked class="peer sr-only">
+                <span class="w-11 h-6 bg-chik-black border border-chik-border peer-checked:bg-chik-orange relative transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:transition-transform peer-checked:after:translate-x-5"></span>
+                <span class="font-mono text-xs text-white uppercase tracking-wider">Анимированный баннер в середине</span>
+              </label>
+              <p class="font-mono text-[10px] text-chik-muted">В середине ролика появляется анимированный баннер сервиса, затем клип продолжается.</p>
+            </div>
+
           </div>
 
           <!-- Launch Button: Big, Tactile, Industrial Safety Orange -->
@@ -1024,6 +1037,8 @@
       const mode = document.getElementById('job-mode').value;
       const count = parseInt(document.getElementById('job-count').value);
       const gameplay = document.getElementById('job-gameplay').value;
+      const bannerEl = document.getElementById('job-banner');
+      const banner = bannerEl ? bannerEl.checked : true;
 
       try {
         const res = await fetch('/api/jobs', {
@@ -1037,7 +1052,8 @@
             mode: mode,
             count: count,
             gameplay_preset: gameplay,
-            subtitle_lang: 'ru'
+            subtitle_lang: 'ru',
+            banner: banner
           })
         });
         const job = await res.json();

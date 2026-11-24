@@ -18,6 +18,7 @@ use crate::web::models::{Job, Reel, WebEvent};
 pub struct JobTask {
     pub job: Job,
     pub count: usize,
+    pub banner: Option<bool>,
     pub should_stop: Arc<AtomicBool>,
 }
 
@@ -82,6 +83,7 @@ pub async fn run_worker(
         let mode = task.job.mode.clone();
         let stream_url = task.job.stream_url.clone();
         let count = task.count;
+        let banner = task.banner;
         let subtitle_lang = task.job.subtitle_lang.clone();
         let should_stop = task.should_stop.clone();
 
@@ -156,6 +158,7 @@ pub async fn run_worker(
                     should_stop: Some(should_stop),
                     on_reel: Some(on_reel_cb),
                     subtitle_lang,
+                    banner: banner.unwrap_or_else(config::banner_enabled),
                     ..Default::default()
                 };
                 live_pipeline::run_live(&lj)
@@ -167,6 +170,7 @@ pub async fn run_worker(
                     out_dir,
                     channel: stream_url.clone(),
                     subtitle_lang,
+                    banner: banner.unwrap_or_else(config::banner_enabled),
                     progress: Some(progress_cb),
                     ..Default::default()
                 };

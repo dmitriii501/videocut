@@ -39,6 +39,8 @@ pub struct ReelJob {
     pub subtitle_lang: Option<String>,
     /// Optional progress callback (e.g. to update a Telegram status message).
     pub progress: Option<Progress>,
+    /// Inject the animated mid-roll promo banner into each reel.
+    pub banner: bool,
 }
 
 impl std::fmt::Debug for ReelJob {
@@ -76,6 +78,7 @@ impl Default for ReelJob {
             words: None,
             subtitle_lang: None,
             progress: None,
+            banner: config::banner_enabled(),
         }
     }
 }
@@ -214,7 +217,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             None => webcam::detect_panel_window(&source, start, dur),
         };
         job.note(&format!("🎬 Рендерю ролик {idx}/{total_segments}…"));
-        render::render_reel(&source, start, dur, ass_for_render.as_deref(), &out, Some(panel))?;
+        render::render_reel(&source, start, dur, ass_for_render.as_deref(), &out, Some(panel), job.banner)?;
         produced.push(out.clone());
 
         // Description / title / hashtags from the reel's own transcript.
