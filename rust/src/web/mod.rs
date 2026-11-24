@@ -42,7 +42,8 @@ pub fn run(bind_addr: String, port: u16) -> Result<i32> {
         let w_q = queue.clone();
         tokio::spawn(async move {
             let worker_events_tx = w_q.events_tx.clone();
-            run_worker(worker_rx, w_db, worker_events_tx).await;
+            let w_stops = w_q.active_stops.clone();
+            run_worker(worker_rx, w_db, worker_events_tx, w_stops).await;
         });
 
         let state = AppState {
@@ -57,6 +58,7 @@ pub fn run(bind_addr: String, port: u16) -> Result<i32> {
             .route("/api/auth/me", get(routes::auth::me))
             .route("/api/jobs", post(routes::jobs::create_job).get(routes::jobs::list_jobs))
             .route("/api/jobs/{id}", get(routes::jobs::get_job))
+            .route("/api/jobs/{id}/stop", post(routes::jobs::stop_job))
             .route("/api/reels", get(routes::reels::list_reels))
             .route("/api/reels/{id}", get(routes::reels::get_reel))
             .route("/api/reels/{id}/video", get(routes::reels::stream_video))

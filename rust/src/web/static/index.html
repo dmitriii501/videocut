@@ -353,7 +353,12 @@
 
         <div class="flex items-center justify-between font-mono text-xs text-chik-muted">
           <span id="active-job-stage" class="text-white">Инициализация конвейера...</span>
-          <span class="text-chik-orange font-bold">[REALTIME TELEMETRY]</span>
+          <div class="flex items-center space-x-3">
+            <button type="button" onclick="handleStopActiveJob()" class="text-[10px] uppercase font-bold text-chik-coral border border-chik-coral/50 hover:bg-chik-coral hover:text-white px-2.5 py-1 transition">
+              🛑 ОСТАНОВИТЬ
+            </button>
+            <span class="text-chik-orange font-bold hidden sm:inline">[REALTIME TELEMETRY]</span>
+          </div>
         </div>
       </div>
 
@@ -539,6 +544,7 @@
     let currentToken = localStorage.getItem('chik_token') || null;
     let authMode = 'login';
     let currentModalReel = null;
+    let activeJobId = null;
     let ws = null;
 
     // Web Audio Synthesizer for tactile feedback
@@ -559,12 +565,20 @@
       } catch (e) {}
     }
 
-    // Platform detection (Twitch / YouTube icon feedback)
+    // Platform detection (Twitch / YouTube icon feedback & smart mode switch)
     function detectPlatform(val) {
       const badge = document.getElementById('detected-platform');
-      if (val.includes('twitch.tv')) {
-        badge.innerText = '🟣 ОБНАРУЖЕН TWITCH';
-        badge.className = 'text-purple-400 text-[11px] font-bold font-mono';
+      const modeSelect = document.getElementById('job-mode');
+      if (val.includes('twitch.tv/')) {
+        if (!val.includes('/videos/') && !val.includes('/clip/')) {
+          badge.innerText = '🟣 TWITCH LIVE — АВТО-ПЕРЕКЛЮЧЕНО НА LIVE-МОНИТОР (БУФЕР)';
+          badge.className = 'text-chik-orange text-[10px] font-bold font-mono';
+          if (modeSelect) modeSelect.value = 'live';
+        } else {
+          badge.innerText = '🟣 ОБНАРУЖЕН TWITCH VOD';
+          badge.className = 'text-purple-400 text-[11px] font-bold font-mono';
+          if (modeSelect) modeSelect.value = 'auto';
+        }
       } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
         badge.innerText = '🔴 ОБНАРУЖЕН YOUTUBE';
         badge.className = 'text-red-400 text-[11px] font-bold font-mono';
@@ -769,11 +783,33 @@
     }
 
     function showActiveJobWidget(job) {
+      activeJobId = job.id;
       const widget = document.getElementById('active-job-card');
       widget.classList.remove('hidden');
       document.getElementById('active-job-title').innerText = `НАРЕЗКА: ${job.channel_name}`;
       document.getElementById('active-job-url').innerText = job.stream_url;
       updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди конвейера...');
+    }
+
+    async function handleStopActiveJob() {
+      if (!activeJobId) return;
+      playClickSound();
+      if (!confirm('Остановить текущую нарезку?')) return;
+      try {
+        const res = await fetch(`/api/jobs/${activeJobId}/stop`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          updateJobProgress(100, 'ЗАДАЧА ОСТАНОВЛЕНА');
+          document.getElementById('active-job-title').innerText = 'ОСТАНОВЛЕНО';
+        } else {
+          alert(data.error || 'Ошибка остановки');
+        }
+      } catch (e) {
+        alert('Ошибка связи с сервером');
+      }
     }
 
     function updateJobProgress(percent, stage) {

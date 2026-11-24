@@ -52,6 +52,17 @@ pub async fn create_job(
         "stream".to_string()
     };
 
+    let is_live_channel = stream_url.contains("twitch.tv/")
+        && !stream_url.contains("/videos/")
+        && !stream_url.contains("/clip/")
+        && !stream_url.contains("clips.twitch.tv");
+
+    let actual_mode = if is_live_channel {
+        "live".to_string()
+    } else {
+        payload.mode.clone()
+    };
+
     let job_id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
@@ -60,7 +71,7 @@ pub async fn create_job(
         user_id: user.id.clone(),
         stream_url: stream_url.clone(),
         channel_name,
-        mode: payload.mode.clone(),
+        mode: actual_mode,
         gameplay_preset: payload.gameplay_preset.clone(),
         subtitle_lang: payload.subtitle_lang.clone(),
         status: "queued".to_string(),
@@ -148,5 +159,53 @@ pub async fn get_job(
             "job": job,
             "reels": reels,
         })),
+    )
+}
+
+pub async fn stop_job(
+    headers: HeaderMap,
+    Path(job_id): Path<String>,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let user = match extract_user(&headers, &state) {
+        Some(u) => u,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({"error": "Не авторизован"})),
+            );
+        }
+    };
+
+    let job = match state.db.get_job(&job_id) {
+        Ok(Some(j)) => j,
+        _ => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "Задача не найдена"})),
+            );
+        }
+    };
+
+    if job.user_id != user.id {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({"error": "Нет доступа к этой задаче"})),
+        );
+    }
+
+    state.queue.cancel_job(&job_id);
+
+    let now = Utc::now().to_rfc3339();
+    let _ = state.db.update_job_status(&job_id, "stopped", Some("Остановлено пользователем"), Some(&now));
+    state.queue.broadcast(crate::web::models::WebEvent::JobStatus {
+        job_id: job_id.clone(),
+        status: "stopped".to_string(),
+        error: Some("Остановлено пользователем".to_string()),
+    });
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({"success": true, "message": "Задача остановлена", "job_id": job_id})),
     )
 }

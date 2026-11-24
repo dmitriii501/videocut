@@ -1,6 +1,7 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use chrono::Utc;
@@ -26,6 +27,7 @@ pub struct JobQueue {
     db: Database,
     tx: mpsc::Sender<JobTask>,
     pub events_tx: broadcast::Sender<WebEvent>,
+    pub active_stops: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
 }
 
 impl JobQueue {
@@ -36,12 +38,25 @@ impl JobQueue {
             db,
             tx,
             events_tx,
+            active_stops: Arc::new(Mutex::new(HashMap::new())),
         };
         (queue, rx)
     }
 
     pub async fn submit(&self, task: JobTask) -> Result<()> {
+        if let Ok(mut map) = self.active_stops.lock() {
+            map.insert(task.job.id.clone(), task.should_stop.clone());
+        }
         self.tx.send(task).await.map_err(|e| anyhow::anyhow!("queue send failed: {e}"))
+    }
+
+    pub fn cancel_job(&self, job_id: &str) {
+        if let Ok(map) = self.active_stops.lock() {
+            if let Some(stop) = map.get(job_id) {
+                stop.store(true, Ordering::SeqCst);
+                log(format!("[worker] signaled stop for job {job_id}"));
+            }
+        }
     }
 
     pub fn subscribe(&self) -> broadcast::Receiver<WebEvent> {
@@ -58,6 +73,7 @@ pub async fn run_worker(
     mut rx: mpsc::Receiver<JobTask>,
     db: Database,
     events_tx: broadcast::Sender<WebEvent>,
+    active_stops: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
 ) {
     log("[worker] background queue worker started");
     while let Some(task) = rx.recv().await {
@@ -174,7 +190,7 @@ pub async fn run_worker(
                 let _ = db.update_job_progress(&job_id, 100, "Готово!");
                 let _ = db.update_job_status(&job_id, "completed", None, Some(&now));
                 let _ = events_tx.send(WebEvent::JobStatus {
-                    job_id,
+                    job_id: job_id.clone(),
                     status: "completed".to_string(),
                     error: None,
                 });
@@ -184,7 +200,7 @@ pub async fn run_worker(
                 log(format!("[worker] job {job_id} failed: {err_str}"));
                 let _ = db.update_job_status(&job_id, "failed", Some(&err_str), Some(&now));
                 let _ = events_tx.send(WebEvent::JobStatus {
-                    job_id,
+                    job_id: job_id.clone(),
                     status: "failed".to_string(),
                     error: Some(err_str),
                 });
@@ -194,11 +210,15 @@ pub async fn run_worker(
                 log(format!("[worker] job {job_id} panicked: {err_str}"));
                 let _ = db.update_job_status(&job_id, "failed", Some(&err_str), Some(&now));
                 let _ = events_tx.send(WebEvent::JobStatus {
-                    job_id,
+                    job_id: job_id.clone(),
                     status: "failed".to_string(),
                     error: Some(err_str),
                 });
             }
+        }
+
+        if let Ok(mut map) = active_stops.lock() {
+            map.remove(&job_id);
         }
     }
 }
