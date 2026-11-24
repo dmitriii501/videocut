@@ -53,6 +53,10 @@ pub fn run(bind_addr: String, port: u16) -> Result<i32> {
 
         let app = Router::new()
             .route("/", get(ui::index))
+            .route("/studio", get(ui::index))
+            .route("/app", get(ui::index))
+            .route("/reels", get(ui::index))
+            .route("/pricing", get(ui::index))
             .route("/api/auth/register", post(routes::auth::register))
             .route("/api/auth/login", post(routes::auth::login))
             .route("/api/auth/me", get(routes::auth::me))

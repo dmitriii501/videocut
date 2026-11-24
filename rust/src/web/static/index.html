@@ -135,7 +135,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
       
       <!-- Brand Logo: CHIK / ЧИК in Safety Orange -->
-      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('studio')">
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('landing')">
         <div class="relative w-11 h-11 bg-chik-orange text-white flex items-center justify-center font-mono font-black text-2xl border border-chik-orange shadow-lg glow-orange-sm transition duration-300 group-hover:bg-white group-hover:text-black" id="scissor-icon">
           ✂
         </div>
@@ -150,11 +150,14 @@
 
       <!-- Center Industrial Navigation -->
       <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/80 p-1 font-mono text-xs">
-        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition">
-          [01] Нарезка
+        <button onclick="switchView('landing')" id="nav-landing" class="px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition">
+          [00] О сервисе
+        </button>
+        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          [01] Студия нарезки
         </button>
         <button onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
-          [02] Клипы
+          [02] Мои клипы <span id="nav-reels-count" class="ml-1 text-[10px] bg-chik-black px-1.5 py-0.5 border border-chik-border text-chik-orange">3</span>
         </button>
         <button onclick="switchView('pricing')" id="nav-pricing" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
           [03] Тарифы
@@ -170,14 +173,17 @@
           <button onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-orange text-white px-2 py-0.5 hover:bg-chik-orangeHover transition ml-1">
             +БАЛАНС
           </button>
+          <button onclick="switchView('studio')" class="text-[10px] uppercase font-bold bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 border border-zinc-700 transition ml-2 hidden sm:inline-block">
+            В СТУДИЮ ⚡
+          </button>
         </div>
 
         <div id="auth-buttons" class="flex items-center space-x-2">
           <button onclick="openAuthModal('login')" class="font-mono text-xs uppercase tracking-wider text-zinc-400 hover:text-white px-3 py-2 transition">
             Вход
           </button>
-          <button onclick="openAuthModal('register')" class="font-mono text-xs uppercase font-bold tracking-wider text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange shadow-lg glow-orange-sm transition">
-            Старт (5 FREE)
+          <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold tracking-wider text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange shadow-lg glow-orange-sm transition">
+            В СТУДИЮ (5 FREE)
           </button>
         </div>
 
@@ -195,31 +201,289 @@
   <!-- MAIN VIEW CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
 
-    <!-- VIEW 1: CUTTER STUDIO / CONSOLE -->
-    <section id="view-studio" class="space-y-12">
-      
-      <!-- HERO: Bold Typography with Asymmetric Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end pt-4 pb-2 border-b border-chik-border/60 pb-8">
-        <div class="lg:col-span-8 space-y-4">
+    <!-- VIEW 0: PROMO LANDING (Clean, high-converting showcase) -->
+    <section id="view-landing" class="space-y-24 py-2">
+
+      <!-- HERO BLOCK: Asymmetric Grid + Interactive 9:16 Viewfinder Showcase -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-2">
+        
+        <!-- Left: Copy & Value Proposition -->
+        <div class="lg:col-span-7 space-y-6">
           <div class="inline-flex items-center space-x-2 font-mono text-[11px] text-chik-orange uppercase tracking-widest border border-chik-orange/40 px-3 py-1 bg-chik-orange/10">
             <span class="w-2 h-2 bg-chik-orange inline-block"></span>
-            <span>NO-TIMELINE // AUTONOMOUS HIGHLIGHT EXTRACTION</span>
+            <span>CHIK 2.0 // АВТОНОМНЫЙ КОНВЕЙЕР ВИРУСНЫХ КЛИПОВ</span>
           </div>
-          <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.95]">
-            ИЗ СТРИМА — В ШОРТС <br>
-            <span class="text-chik-orange">ЧЕРЕЗ 2 МИНУТЫ.</span> <br>
+
+          <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.92]">
+            ИЗ СТРИМА — В ВИРУСНЫЙ КЛИП <br>
+            <span class="text-chik-orange">ЗА 2 МИНУТЫ.</span> <br>
             <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖКИ.</span>
           </h1>
-        </div>
-        <div class="lg:col-span-4 font-mono text-xs text-chik-muted space-y-3">
-          <p class="leading-relaxed">
-            Автопилот слушает аудио-взрывы (крик, смех, хайп), сканирует эмодзи чата Twitch и автоматически форматирует 9:16 со слежением за лицом и караоке-субтитрами.
+
+          <p class="font-mono text-sm sm:text-base text-zinc-300 max-w-xl leading-relaxed">
+            Нейросеть слушает стрим, мгновенно детектирует взрывы смеха, крики и реакцию зрителей в чате Twitch. Кадрирует спикера в 9:16, запускает динамичный геймплей и генерирует анимированные караоке-субтитры с переводом.
           </p>
-          <div class="flex items-center space-x-4 text-[10px] uppercase text-zinc-500 pt-2 border-t border-chik-border">
-            <span>● TWITCH VOD / LIVE</span>
-            <span>● YOUTUBE 4K</span>
-            <span>● WHISPER-RS</span>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 pt-2">
+            <button 
+              onclick="switchView('studio')" 
+              onmousedown="playClickSound()"
+              class="bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-lg uppercase tracking-wider px-8 py-5 border border-chik-orange transition shadow-xl glow-orange flex items-center justify-center space-x-3 group"
+            >
+              <span>ОТКРЫТЬ СТУДИЮ НАРЕЗОК</span>
+              <span class="text-xl transform group-hover:rotate-45 transition duration-300">⚡</span>
+            </button>
+            <button 
+              onclick="switchView('reels')" 
+              onmousedown="playClickSound()"
+              class="border border-chik-border hover:border-chik-orange text-white font-mono text-xs uppercase tracking-wider px-6 py-5 transition flex items-center justify-center space-x-2 bg-chik-surface/60"
+            >
+              <span>СМОТРЕТЬ КЛИПЫ И ПРИМЕРЫ</span>
+              <span>▶</span>
+            </button>
           </div>
+
+          <!-- Quick Metrics Bar -->
+          <div class="grid grid-cols-3 gap-4 pt-6 border-t border-chik-border/80 font-mono text-xs">
+            <div>
+              <div class="text-chik-orange font-black text-lg">~2 МИН</div>
+              <div class="text-[10px] text-chik-muted uppercase">СКОРОСТЬ НАРЕЗКИ</div>
+            </div>
+            <div>
+              <div class="text-white font-black text-lg">WHISPER-RS</div>
+              <div class="text-[10px] text-chik-muted uppercase">КАРАОКЕ-САБЫ</div>
+            </div>
+            <div>
+              <div class="text-white font-black text-lg">1080×1920</div>
+              <div class="text-[10px] text-chik-muted uppercase">TIKTOK & SHORTS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Real-Life 9:16 Viewfinder Showcase -->
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="relative w-full max-w-[320px]">
+            
+            <!-- Corner Crosshairs & Frame -->
+            <div class="crosshair-box bg-chik-surface border-2 border-chik-border p-3 shadow-2xl relative">
+              
+              <!-- Phone Shell -->
+              <div class="aspect-reel bg-black relative overflow-hidden rounded border border-chik-borderLight shadow-2xl">
+                <!-- Video Element with autoplay / loop -->
+                <video 
+                  id="landing-hero-video"
+                  src="/api/reels/reel_001_hype/video" 
+                  autoplay 
+                  muted 
+                  loop 
+                  playsinline 
+                  class="w-full h-full object-cover"
+                ></video>
+                
+                <!-- Viewfinder Live Overlay -->
+                <div class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+                  <!-- Top HUD -->
+                  <div class="flex items-center justify-between font-mono text-[9px] text-white">
+                    <span class="bg-chik-black/90 px-2 py-0.5 border border-chik-border text-chik-orange font-bold flex items-center space-x-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-chik-orange animate-ping"></span>
+                      <span>LIVE PREVIEW</span>
+                    </span>
+                    <span class="bg-black/80 px-2 py-0.5 border border-zinc-800 text-zinc-400">9:16 REC</span>
+                  </div>
+
+                  <!-- Center Crosshair Target -->
+                  <div class="self-center w-12 h-12 border border-chik-orange/30 border-dashed rounded-full flex items-center justify-center opacity-70">
+                    <div class="w-1.5 h-1.5 bg-chik-orange rounded-full"></div>
+                  </div>
+
+                  <!-- Bottom HUD -->
+                  <div class="space-y-1.5 bg-gradient-to-t from-black via-black/80 to-transparent -mx-4 -mb-4 p-4 pt-6">
+                    <div class="flex items-center space-x-2 font-mono text-[9px]">
+                      <span class="bg-chik-orange text-white font-black px-1.5 py-0.5 uppercase">🔥 ХАЙП: 115%</span>
+                      <span class="text-zinc-400">theburntpeanut_247</span>
+                    </div>
+                    <div class="font-display font-bold text-xs text-white uppercase leading-snug">
+                      📞 Телефон звонит: Кто поможет спросить?
+                    </div>
+                    <div class="font-mono text-[9px] text-chik-muted">
+                      #shorts #clips #twitch #viral
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Viewfinder Hardware Decal -->
+              <div class="flex items-center justify-between pt-2.5 px-1 font-mono text-[9px] text-zinc-500">
+                <span>VIEWFINDER 9:16</span>
+                <span>CHIK ENGINE v0.2.1</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION 1: HOW IT WORKS (3 HARDWARE-ENGINEERED STEPS) -->
+      <div class="space-y-8">
+        <div class="border-b border-chik-border pb-4">
+          <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ АВТОМАТИЧЕСКИЙ КОНВЕЙЕР ]</div>
+          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
+            КАК РАБОТАЕТ ЧИК ЗА 3 ШАГА
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div class="crosshair-box bg-chik-surface border border-chik-border p-7 space-y-4 relative">
+            <div class="font-mono text-4xl font-black text-chik-orange/40">01</div>
+            <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ВСТАВЬ ССЫЛКУ</div>
+            <h3 class="font-display font-bold text-lg text-white uppercase">Twitch или YouTube</h3>
+            <p class="font-mono text-xs text-chik-muted leading-relaxed">
+              Не нужно часами скачивать сотни гигабайт стрима. Просто вставь URL канала или VOD-записи, выбери количество клипов и нажми кнопку.
+            </p>
+          </div>
+
+          <div class="crosshair-box bg-chik-surface border border-chik-border p-7 space-y-4 relative">
+            <div class="font-mono text-4xl font-black text-chik-orange/40">02</div>
+            <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ИИ НАХОДИТ ХАЙП</div>
+            <h3 class="font-display font-bold text-lg text-white uppercase">Звук + Чат + Whisper</h3>
+            <p class="font-mono text-xs text-chik-muted leading-relaxed">
+              Адаптивный алгоритм громкости MAD ловит искренний смех и крики. Детектор чата находит взрывы эмодзи (KEKW, PogChamp). Whisper распознает речь.
+            </p>
+          </div>
+
+          <div class="crosshair-box bg-chik-surface border border-chik-border p-7 space-y-4 relative">
+            <div class="font-mono text-4xl font-black text-chik-orange/40">03</div>
+            <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ГОТОВЫЙ РИЛС</div>
+            <h3 class="font-display font-bold text-lg text-white uppercase">9:16 + Субтитры + Теги</h3>
+            <p class="font-mono text-xs text-chik-muted leading-relaxed">
+              Стример кадрируется по центру, внизу запускается геймплейная подложка, накладываются яркие караоке-субтитры, генерируется кликбейтный заголовок и хештеги.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 2: 6 ADVANTAGES -->
+      <div class="space-y-8">
+        <div class="border-b border-chik-border pb-4">
+          <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ ИНЖЕНЕРНЫЕ ПРЕИМУЩЕСТВА ]</div>
+          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
+            ПОЧЕМУ ЭТО ЗАЛЕТАЕТ В РЕКОМЕНДАЦИИ
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 font-mono">
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 01 // СЛЕЖЕНИЕ ЗА ЛИЦОМ ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Стример всегда по центру</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Никаких криво обрезанных веб-камер. Система держит лицо в фокусе видоискателя 9:16.</p>
+          </div>
+
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 02 // КАРАОКЕ-СУБТИТРЫ ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Каждое слово в такт</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Слова вспыхивают неоном синхронно со звуком голоса. Досматриваемость ролика вырастает на 70%.</p>
+          </div>
+
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 03 // ДИНАМИЧНЫЙ ГЕЙМПЛЕЙ ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Subway, Minecraft, GTA</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Нижняя половина экрана заполняется гипнотическим геймплеем для удержания зрителя в TikTok.</p>
+          </div>
+
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 04 // ДЕТЕКТОР ВЗРЫВА ЧАТА ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Оценка реакции зрителей</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Всплеск сообщений со смайликами хайпа мгновенно сигнализирует о самом смешном моменте стрима.</p>
+          </div>
+
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 05 // ГОТОВОЕ ОПИСАНИЕ И ТЕГИ ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Копируй и публикуй</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">В комплекте с каждым MP4 генерируется цепляющий заголовок, краткий синопсис и вирусные хештеги.</p>
+          </div>
+
+          <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
+            <div class="text-chik-orange text-xs font-bold">[ 06 // НАДЕЖНЫЙ RUST ДВИЖОК ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Мгновенный локальный рендер</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Никаких очередей сторонних сервисов. Быстрая обработка через аппаратно ускоренный C/Rust пайплайн.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: PRICING PREVIEW -->
+      <div class="space-y-8">
+        <div class="flex items-center justify-between border-b border-chik-border pb-4">
+          <div>
+            <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ ТАРИФЫ ]</div>
+            <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
+              ПРОЗРАЧНЫЕ ПАКЕТЫ КЛИПОВ
+            </h2>
+          </div>
+          <button onclick="switchView('pricing')" class="font-mono text-xs uppercase text-chik-muted hover:text-white border border-chik-border px-3 py-1.5 transition">
+            Все условия →
+          </button>
+        </div>
+
+        <div id="landing-packages-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          <!-- Filled by loadPackages() -->
+        </div>
+      </div>
+
+      <!-- FINAL CALL TO ACTION -->
+      <div class="crosshair-box bg-chik-surface border border-chik-orange/70 p-10 sm:p-14 text-center space-y-6 glow-orange-sm">
+        <div class="inline-block font-mono text-xs uppercase text-chik-orange font-bold tracking-widest bg-chik-orange/10 border border-chik-orange/40 px-3 py-1">
+          START CREATING TODAY // 5 CLIPS FREE
+        </div>
+        <h2 class="font-display font-black text-3xl sm:text-5xl uppercase text-white tracking-tight max-w-2xl mx-auto">
+          ХВАТИТ МОНТИРОВАТЬ РУКАМИ. <br>
+          <span class="text-chik-orange">ЗАПУСТИ ЧИК СЕЙЧАС.</span>
+        </h2>
+        <p class="font-mono text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto">
+          Получи 5 бесплатных клипов сразу после быстрой регистрации. Никаких банковских карт.
+        </p>
+        <div class="pt-2">
+          <button 
+            onclick="switchView('studio')" 
+            onmousedown="playClickSound()"
+            class="bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-xl uppercase tracking-wider px-10 py-5 border border-chik-orange transition shadow-2xl glow-orange"
+          >
+            ОТКРЫТЬ СТУДИЮ НАРЕЗОК ⚡
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- VIEW 1: CUTTER STUDIO / CONSOLE (Clean, focused workspace) -->
+    <section id="view-studio" class="hidden space-y-10">
+      
+      <!-- STUDIO COCKPIT HEADER -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-chik-border pb-5 gap-4">
+        <div>
+          <div class="inline-flex items-center space-x-2 font-mono text-[10px] text-chik-orange uppercase tracking-widest border border-chik-orange/30 px-2.5 py-0.5 bg-chik-orange/10 mb-2">
+            <span class="w-1.5 h-1.5 bg-chik-orange rounded-full animate-ping"></span>
+            <span>AUTONOMOUS ENGINE // FLIGHT DECK</span>
+          </div>
+          <h1 class="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-tight flex items-center space-x-3">
+            <span>КОНСОЛЬ НАРЕЗКИ СТРИМА</span>
+            <span class="text-xs font-mono font-normal text-chik-muted hidden sm:inline">v0.2.1</span>
+          </h1>
+        </div>
+        
+        <div class="flex items-center space-x-3 font-mono text-xs">
+          <button onclick="switchView('landing')" class="text-chik-muted hover:text-white border border-chik-border px-3 py-2 uppercase transition flex items-center space-x-1.5">
+            <span>←</span>
+            <span>О сервисе</span>
+          </button>
+          <button onclick="switchView('reels')" class="text-white bg-chik-surface border border-chik-border hover:border-chik-orange px-3.5 py-2 uppercase transition flex items-center space-x-2">
+            <span>Мои клипы</span>
+            <span id="studio-reels-badge" class="bg-chik-orange text-white text-[10px] font-bold px-1.5 py-0.2">3</span>
+          </button>
         </div>
       </div>
 
@@ -228,7 +492,7 @@
         <div class="flex items-center justify-between border-b border-chik-border pb-4 mb-8 font-mono text-xs">
           <div class="flex items-center space-x-2 text-zinc-400">
             <span class="w-2 h-2 bg-chik-orange rounded-full animate-pulse"></span>
-            <span class="font-bold text-white uppercase tracking-wider">CUTTER CONSOLE v0.2</span>
+            <span class="font-bold text-white uppercase tracking-wider">CUTTER CONSOLE v0.2.1</span>
           </div>
           <div class="flex items-center space-x-3 text-[11px] text-chik-muted">
             <button type="button" onclick="insertDemoUrl('twitch')" class="hover:text-chik-orange transition underline">
@@ -247,7 +511,7 @@
             <div class="flex justify-between items-center font-mono text-xs">
               <label class="font-bold text-white uppercase tracking-wider flex items-center space-x-2">
                 <span>[01] ИСТОЧНИК СТРИМА</span>
-                <span class="text-chik-muted font-normal">(VOD или ссылка на канал)</span>
+                <span class="text-chik-muted font-normal">(VOD или ссылка на live канал)</span>
               </label>
               <span id="detected-platform" class="text-chik-orange text-[11px] font-bold"></span>
             </div>
@@ -362,30 +626,19 @@
         </div>
       </div>
 
-      <!-- BRAND PRINCIPLES / FEATURES -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
-          <div class="font-mono text-chik-orange text-xs font-bold">[01 // АУДИО-АНАЛИЗАТОР]</div>
-          <h4 class="font-display font-extrabold text-lg text-white uppercase">Ловит настоящий крик и смех</h4>
-          <p class="font-mono text-xs text-chik-muted leading-relaxed">
-            Адаптивная формула MAD отделяет фоновый шум игры от искренней человеческой реакции. Никаких унылых разговорных пауз.
-          </p>
+      <!-- RECENT CLIPS QUICK ACCESS BAR IN STUDIO -->
+      <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-chik-border pb-3">
+          <div class="font-mono text-xs font-bold text-white uppercase flex items-center space-x-2">
+            <span class="text-chik-orange">▶</span>
+            <span>НЕДАВНО СГЕНЕРИРОВАННЫЕ КЛИПЫ</span>
+          </div>
+          <button onclick="switchView('reels')" class="font-mono text-[11px] uppercase text-chik-orange hover:underline font-bold">
+            Смотреть всю обойму клипов →
+          </button>
         </div>
-
-        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
-          <div class="font-mono text-chik-orange text-xs font-bold">[02 // TWITCH ЧАТ-СКОР]</div>
-          <h4 class="font-display font-extrabold text-lg text-white uppercase">Всплески KEKW и PogChamp</h4>
-          <p class="font-mono text-xs text-chik-muted leading-relaxed">
-            Чат взвешивается по эмоциям: 10 сообщений с KEKW важнее сотни обычных реплик. Момент утверждается только при консенсусе.
-          </p>
-        </div>
-
-        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
-          <div class="font-mono text-chik-orange text-xs font-bold">[03 // СУБТИТРЫ КАРАОКЕ]</div>
-          <h4 class="font-display font-extrabold text-lg text-white uppercase">Каждое слово в такт</h4>
-          <p class="font-mono text-xs text-chik-muted leading-relaxed">
-            Локальная нейросеть Whisper генерирует субтитры с посекундной подсветкой слов. Зритель задерживается на ролике на 70% дольше.
-          </p>
+        <div id="studio-recent-reels" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Injected by loadReels() -->
         </div>
       </div>
 
@@ -599,19 +852,34 @@
     // Switch View
     function switchView(viewName) {
       playClickSound();
-      ['studio', 'reels', 'pricing'].forEach(v => {
+      const views = ['landing', 'studio', 'reels', 'pricing'];
+      if (!views.includes(viewName)) viewName = 'landing';
+
+      views.forEach(v => {
         const el = document.getElementById('view-' + v);
         const nav = document.getElementById('nav-' + v);
         if (v === viewName) {
-          el.classList.remove('hidden');
+          if (el) el.classList.remove('hidden');
           if (nav) nav.className = "px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition";
         } else {
-          el.classList.add('hidden');
+          if (el) el.classList.add('hidden');
           if (nav) nav.className = "px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition";
         }
       });
+
+      // Update URL hash without reload
+      if (history.pushState) {
+        history.pushState(null, null, viewName === 'landing' ? '/' : '#' + viewName);
+      }
+
       if (viewName === 'reels') loadReels();
-      if (viewName === 'pricing') loadPackages();
+      if (viewName === 'pricing' || viewName === 'landing') loadPackages();
+      if (viewName === 'studio') {
+        loadReels();
+        const input = document.getElementById('stream-url');
+        if (input && !input.value) setTimeout(() => input.focus(), 150);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // Demo URLs
@@ -732,6 +1000,7 @@
           localStorage.setItem('chik_token', currentToken);
           updateAuthUI(currentUser);
           closeAuthModal();
+          switchView('studio');
         } else {
           errorDiv.innerText = data.error || 'Ошибка входа';
           errorDiv.classList.remove('hidden');
@@ -831,42 +1100,81 @@
         const reels = await res.json();
         const container = document.getElementById('reels-container');
         const empty = document.getElementById('reels-empty');
-        container.innerHTML = '';
+        const navBadge = document.getElementById('nav-reels-count');
+        const studioBadge = document.getElementById('studio-reels-badge');
+        const recentContainer = document.getElementById('studio-recent-reels');
+
+        if (Array.isArray(reels)) {
+          if (navBadge) navBadge.innerText = reels.length;
+          if (studioBadge) studioBadge.innerText = reels.length;
+        }
+
+        if (container) container.innerHTML = '';
 
         if (!reels || reels.length === 0) {
-          empty.classList.remove('hidden');
+          if (empty) empty.classList.remove('hidden');
+          if (recentContainer) {
+            recentContainer.innerHTML = '<div class="col-span-full text-center py-6 text-chik-muted font-mono text-xs">Пока нет клипов. Вставь ссылку выше и нажми «ЧИКНУТЬ СТРИМ».</div>';
+          }
           return;
         }
-        empty.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
 
-        reels.forEach(r => {
-          const card = document.createElement('div');
-          card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-orange transition duration-200 flex flex-col group cursor-pointer shadow-xl";
-          card.onclick = () => openPlayerModal(r);
-          card.innerHTML = `
-            <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
-              <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
-              <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-              <div class="absolute top-2.5 right-2.5 bg-chik-black/95 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-orange border border-chik-orange/40">
-                🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
+        // Render full reels gallery
+        if (container) {
+          reels.forEach(r => {
+            const card = document.createElement('div');
+            card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-orange transition duration-200 flex flex-col group cursor-pointer shadow-xl";
+            card.onclick = () => openPlayerModal(r);
+            card.innerHTML = `
+              <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
+                <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                <div class="absolute top-2.5 right-2.5 bg-chik-black/95 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-orange border border-chik-orange/40">
+                  🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
+                </div>
+                <div class="absolute bottom-3 left-3 right-3 space-y-1">
+                  <h4 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h4>
+                  <p class="font-mono text-[10px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</p>
+                </div>
+                <div class="w-11 h-11 bg-chik-orange text-white flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-orange-sm">
+                  ▶
+                </div>
               </div>
-              <div class="absolute bottom-3 left-3 right-3 space-y-1">
-                <h4 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h4>
-                <p class="font-mono text-[10px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</p>
+              <div class="p-3 border-t border-chik-border bg-chik-card flex items-center justify-between font-mono text-[11px]">
+                <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-500'}">
+                  ${r.is_unlocked ? '✅ ГОТОВ' : '🔒 1 КРЕДИТ'}
+                </span>
+                <span class="text-chik-orange font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
               </div>
-              <div class="w-11 h-11 bg-chik-orange text-white flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-orange-sm">
-                ▶
+            `;
+            container.appendChild(card);
+          });
+        }
+
+        // Render top 3 recent reels in Studio cockpit
+        if (recentContainer) {
+          recentContainer.innerHTML = '';
+          const top3 = reels.slice(0, 3);
+          top3.forEach(r => {
+            const mini = document.createElement('div');
+            mini.className = "bg-chik-black border border-chik-border hover:border-chik-orange p-3 flex items-center space-x-3 cursor-pointer group transition";
+            mini.onclick = () => openPlayerModal(r);
+            mini.innerHTML = `
+              <div class="w-14 h-20 bg-zinc-950 border border-zinc-800 relative flex-shrink-0 overflow-hidden flex items-center justify-center">
+                <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover"></video>
+                <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-xs text-white opacity-0 group-hover:opacity-100 transition">▶</span>
               </div>
-            </div>
-            <div class="p-3 border-t border-chik-border bg-chik-card flex items-center justify-between font-mono text-[11px]">
-              <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-500'}">
-                ${r.is_unlocked ? '✅ ГОТОВ' : '🔒 1 КРЕДИТ'}
-              </span>
-              <span class="text-chik-orange font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
-            </div>
-          `;
-          container.appendChild(card);
-        });
+              <div class="overflow-hidden flex-1 space-y-1">
+                <div class="font-display font-bold text-xs text-white truncate">${r.title}</div>
+                <div class="font-mono text-[10px] text-chik-orange font-bold">🔥 ${Math.round(r.hype_score * 100)}% ХАЙП</div>
+                <div class="font-mono text-[9px] text-zinc-500">${Math.round(r.duration_secs)}s // 9:16 SHORTS</div>
+                <div class="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider pt-0.5">СМОТРЕТЬ →</div>
+              </div>
+            `;
+            recentContainer.appendChild(mini);
+          });
+        }
       } catch (e) {
         console.error(e);
       }
@@ -956,28 +1264,31 @@
       try {
         const res = await fetch('/api/billing/packages');
         const packs = await res.json();
-        const grid = document.getElementById('packages-grid');
-        grid.innerHTML = '';
+        ['packages-grid', 'landing-packages-grid'].forEach(gridId => {
+          const grid = document.getElementById(gridId);
+          if (!grid) return;
+          grid.innerHTML = '';
 
-        packs.forEach(p => {
-          const card = document.createElement('div');
-          card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-orange glow-orange' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
-          card.innerHTML = `
-            ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-orange text-white font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
-            <div class="space-y-4">
-              <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ ПАКЕТ ]</div>
-              <h3 class="font-display font-black text-2xl uppercase text-white">${p.name}</h3>
-              <p class="font-mono text-xs text-chik-muted leading-relaxed">${p.description}</p>
-              <div class="pt-3 border-t border-chik-border">
-                <span class="font-mono text-4xl font-black text-white">${p.price_rub} ₽</span>
-                <span class="font-mono text-xs text-zinc-500 ml-1">/ ${p.credits} КЛИПОВ</span>
+          packs.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-orange glow-orange' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
+            card.innerHTML = `
+              ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-orange text-white font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
+              <div class="space-y-4">
+                <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ ПАКЕТ ]</div>
+                <h3 class="font-display font-black text-2xl uppercase text-white">${p.name}</h3>
+                <p class="font-mono text-xs text-chik-muted leading-relaxed">${p.description}</p>
+                <div class="pt-3 border-t border-chik-border">
+                  <span class="font-mono text-4xl font-black text-white">${p.price_rub} ₽</span>
+                  <span class="font-mono text-xs text-zinc-500 ml-1">/ ${p.credits} КЛИПОВ</span>
+                </div>
               </div>
-            </div>
-            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-orange text-white hover:bg-chik-orangeHover' : 'bg-chik-card text-white hover:border-chik-orange border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
-              АКТИВИРОВАТЬ ПАКЕТ
-            </button>
-          `;
-          grid.appendChild(card);
+              <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-orange text-white hover:bg-chik-orangeHover' : 'bg-chik-card text-white hover:border-chik-orange border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
+                АКТИВИРОВАТЬ ПАКЕТ
+              </button>
+            `;
+            grid.appendChild(card);
+          });
         });
       } catch (e) {
         console.error(e);
@@ -1057,9 +1368,34 @@
       };
     }
 
-    // Startup
-    initAuth();
-    connectWs();
+    // Startup & Routing
+    async function startApp() {
+      await initAuth();
+      connectWs();
+
+      const path = window.location.pathname.replace(/^\//, '');
+      const hash = window.location.hash.replace(/^#/, '');
+      const target = hash || path;
+
+      if (['studio', 'reels', 'pricing'].includes(target)) {
+        switchView(target);
+      } else {
+        switchView('landing');
+      }
+
+      window.addEventListener('popstate', () => {
+        const p = window.location.pathname.replace(/^\//, '');
+        const h = window.location.hash.replace(/^#/, '');
+        const t = h || p;
+        if (['landing', 'studio', 'reels', 'pricing'].includes(t)) {
+          switchView(t);
+        } else {
+          switchView('landing');
+        }
+      });
+    }
+
+    startApp();
   </script>
 </body>
 </html>
