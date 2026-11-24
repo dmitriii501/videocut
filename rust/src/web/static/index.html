@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ЧИК / CHIK ✂️ — Автопилот вирусных нарезок для стримеров</title>
+  <title>ЧИК / CHIK ✂️ — Автопилот вирусных нарезок</title>
+  
+  <!-- Distinctive Typography: Syne (Brutalist Editorial) + Space Mono (Precision Telemetry) + Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -14,342 +17,485 @@
       theme: {
         extend: {
           colors: {
-            brand: {
-              volt: '#D4FF00',
-              violet: '#8B5CF6',
-              dark: '#0B0E14',
-              surface: '#141824',
-              surfaceHover: '#1E2436',
-              border: '#2A3249',
-              fire: '#FF4757',
+            chik: {
+              black: '#060709',
+              dark: '#0B0D12',
+              surface: '#111319',
+              card: '#161922',
+              border: '#232735',
+              borderLight: '#32374A',
+              volt: '#DFFF00',       // Electric Laser Lime
+              voltHover: '#EBFF4D',
+              coral: '#FF3856',      // REC Flame
+              cyan: '#00F0FF',
+              text: '#EDEDED',
+              muted: '#767E94'
             }
           },
           fontFamily: {
+            display: ['"Syne"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
             sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
           }
         }
       }
     }
   </script>
+  
   <style>
+    /* Precision Viewfinder & Technical Grid Aesthetics */
+    :root {
+      --bg: #060709;
+      --volt: #DFFF00;
+    }
+    
     body {
-      background-color: #0B0E14;
-      color: #F8FAFC;
+      background-color: var(--bg);
+      color: #EDEDED;
       background-image: 
-        radial-gradient(at 0% 0%, rgba(212, 255, 0, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.07) 0px, transparent 50%);
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        radial-gradient(at 0% 0%, rgba(223, 255, 0, 0.035) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(0, 240, 255, 0.03) 0px, transparent 45%);
+      background-size: 28px 28px, 100% 100%, 100% 100%;
     }
-    .glow-volt {
-      box-shadow: 0 0 25px -5px rgba(212, 255, 0, 0.35);
+
+    /* Crosshair Crop Markers */
+    .crosshair-box {
+      position: relative;
     }
-    .glow-violet {
-      box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.35);
+    .crosshair-box::before, .crosshair-box::after {
+      content: '+';
+      position: absolute;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: rgba(223, 255, 0, 0.4);
+      pointer-events: none;
+      line-height: 1;
     }
-    .reel-aspect {
+    .crosshair-box::before { top: -6px; left: -5px; }
+    .crosshair-box::after { bottom: -6px; right: -5px; }
+
+    /* Laser Volt Glows */
+    .glow-laser {
+      box-shadow: 0 0 35px -8px rgba(223, 255, 0, 0.45);
+    }
+    .glow-laser-sm {
+      box-shadow: 0 0 15px -3px rgba(223, 255, 0, 0.35);
+    }
+
+    /* 9:16 Frame Aspect */
+    .aspect-reel {
       aspect-ratio: 9 / 16;
     }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+
+    /* Scissor animation */
+    @keyframes snip {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-25deg); }
     }
-    ::-webkit-scrollbar-track {
-      background: #0B0E14;
+    .animate-snip {
+      animation: snip 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    ::-webkit-scrollbar-thumb {
-      background: #2A3249;
-      border-radius: 3px;
+
+    /* Scanline overlay (optional cinematic feel) */
+    .scanlines {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #D4FF00;
+
+    /* Audio visualizer bar animation */
+    @keyframes eq {
+      0%, 100% { height: 15%; }
+      50% { height: 95%; }
     }
+    .eq-bar:nth-child(1) { animation: eq 0.6s infinite ease-in-out; }
+    .eq-bar:nth-child(2) { animation: eq 0.4s infinite ease-in-out 0.1s; }
+    .eq-bar:nth-child(3) { animation: eq 0.8s infinite ease-in-out 0.2s; }
+    .eq-bar:nth-child(4) { animation: eq 0.5s infinite ease-in-out 0.15s; }
+    .eq-bar:nth-child(5) { animation: eq 0.7s infinite ease-in-out 0.3s; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-brand-volt selection:text-black">
+<body class="min-h-screen flex flex-col font-sans selection:bg-chik-volt selection:text-black antialiased">
+
+  <!-- TOP TELEMETRY RIBBON -->
+  <aside class="border-b border-chik-border bg-chik-dark/90 backdrop-blur-md px-4 py-1.5 text-[10px] font-mono text-chik-muted flex items-center justify-between overflow-x-auto whitespace-nowrap">
+    <div class="flex items-center space-x-4">
+      <span class="flex items-center space-x-1.5 text-chik-volt">
+        <span class="w-1.5 h-1.5 rounded-full bg-chik-volt animate-ping"></span>
+        <span class="font-bold tracking-widest">CHIK//SYS.ONLINE</span>
+      </span>
+      <span class="hidden sm:inline-block text-zinc-600">|</span>
+      <span class="hidden sm:inline-block">ENGINE: <span class="text-zinc-300">RUST 1.82 (NATIVE-SIMD)</span></span>
+      <span class="hidden md:inline-block text-zinc-600">|</span>
+      <span class="hidden md:inline-block">DETECTOR: <span class="text-zinc-300">AUDIO-MAD + TWITCH-IRC</span></span>
+      <span class="hidden lg:inline-block text-zinc-600">|</span>
+      <span class="hidden lg:inline-block">ASPECT: <span class="text-zinc-300">9:16 (720x1280)</span></span>
+    </div>
+    <div class="flex items-center space-x-3 text-right">
+      <span class="font-bold text-zinc-400" id="clock-display">00:00:00 UTC</span>
+    </div>
+  </aside>
 
   <!-- NAVBAR -->
-  <header class="border-b border-brand-border/60 bg-brand-dark/80 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('create')">
-        <div class="w-10 h-10 rounded-xl bg-brand-volt text-black flex items-center justify-center font-extrabold text-2xl shadow-lg glow-volt transform -rotate-3 transition hover:rotate-0">
-          ✂️
+  <header class="border-b border-chik-border/80 bg-chik-black/90 backdrop-blur-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo: CHIK / ЧИК with animated scissor -->
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('studio')">
+        <div class="relative w-11 h-11 bg-chik-volt text-black flex items-center justify-center font-mono font-black text-2xl rounded-none border border-chik-volt shadow-lg glow-laser-sm transition duration-300 group-hover:bg-white" id="scissor-icon">
+          ✂
         </div>
         <div>
-          <div class="flex items-center space-x-1.5">
-            <span class="font-black text-2xl tracking-wider text-white">ЧИК</span>
-            <span class="text-xs font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-brand-violet/20 text-brand-violet border border-brand-violet/40">CHIK</span>
+          <div class="flex items-baseline space-x-2">
+            <span class="font-display font-black text-3xl tracking-tight text-white uppercase group-hover:text-chik-volt transition">ЧИК</span>
+            <span class="font-mono text-xs font-bold text-chik-volt tracking-widest">[CHIK]</span>
           </div>
-          <p class="text-[10px] text-slate-400 -mt-1 hidden sm:block">автопилот нарезок из стримов</p>
+          <p class="font-mono text-[9px] text-chik-muted uppercase tracking-wider -mt-1">автопилот вирусных нарезок</p>
         </div>
       </div>
 
-      <!-- Navigation links -->
-      <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
-        <button onclick="switchView('create')" id="nav-create" class="text-brand-volt hover:text-white transition">⚡ Создать нарезку</button>
-        <button onclick="switchView('reels')" id="nav-reels" class="text-slate-400 hover:text-white transition">📼 Мои клипы</button>
-        <button onclick="switchView('pricing')" id="nav-pricing" class="text-slate-400 hover:text-white transition">💎 Тарифы</button>
+      <!-- Center Minimalist Navigation -->
+      <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/60 p-1 font-mono text-xs">
+        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-black bg-chik-volt font-bold uppercase tracking-wider transition">
+          [01] Нарезка
+        </button>
+        <button onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          [02] Клипы
+        </button>
+        <button onclick="switchView('pricing')" id="nav-pricing" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          [03] Тарифы
+        </button>
       </nav>
 
-      <!-- User Info & Balance -->
+      <!-- User Deck / Credits / Auth -->
       <div class="flex items-center space-x-3">
-        <div id="user-balance-box" class="hidden flex items-center space-x-2 bg-brand-surface border border-brand-border px-3 py-1.5 rounded-xl">
-          <span class="text-brand-volt text-sm">⚡</span>
-          <span id="user-credits" class="font-mono font-bold text-sm text-white">0</span>
-          <span class="text-xs text-slate-400">кредитов</span>
-          <button onclick="openTopupModal()" class="text-xs text-black font-bold bg-brand-volt hover:bg-yellow-300 px-2 py-0.5 rounded ml-1 transition">
-            +
+        <div id="user-balance-box" class="hidden flex items-center space-x-2.5 bg-chik-surface border border-chik-border px-3.5 py-2 font-mono">
+          <span class="text-chik-volt text-xs">⚡</span>
+          <span id="user-credits" class="font-bold text-sm text-white">0</span>
+          <span class="text-[10px] uppercase tracking-wider text-chik-muted">клипов</span>
+          <button onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-volt text-black px-2 py-0.5 hover:bg-white transition ml-1">
+            +БАЛАНС
           </button>
         </div>
 
-        <div id="auth-buttons">
-          <button onclick="openAuthModal('login')" class="text-sm font-semibold text-slate-300 hover:text-white px-3 py-1.5 transition">
-            Войти
+        <div id="auth-buttons" class="flex items-center space-x-2">
+          <button onclick="openAuthModal('login')" class="font-mono text-xs uppercase tracking-wider text-zinc-400 hover:text-white px-3 py-2 transition">
+            Вход
           </button>
-          <button onclick="openAuthModal('register')" class="text-sm font-bold text-black bg-brand-volt hover:bg-yellow-300 px-4 py-2 rounded-xl transition glow-volt">
-            Попробовать бесплатно
+          <button onclick="openAuthModal('register')" class="font-mono text-xs uppercase font-bold tracking-wider text-black bg-chik-volt hover:bg-chik-voltHover px-4 py-2 border border-chik-volt shadow-lg glow-laser-sm transition">
+            Старт (5 FREE)
           </button>
         </div>
 
         <div id="user-profile-box" class="hidden flex items-center space-x-2">
-          <span id="user-email-display" class="text-xs text-slate-300 font-mono hidden lg:inline-block max-w-[140px] truncate"></span>
-          <button onclick="logout()" title="Выйти" class="text-xs text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-brand-surface transition">
-            🚪
+          <span id="user-email-display" class="font-mono text-xs text-zinc-400 hidden xl:inline-block max-w-[130px] truncate"></span>
+          <button onclick="logout()" title="Выйти" class="font-mono text-xs text-chik-muted hover:text-chik-coral border border-chik-border hover:border-chik-coral p-2 transition">
+            ВЫХОД
           </button>
         </div>
       </div>
+
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
+  <!-- MAIN VIEW CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
 
-    <!-- VIEW: CREATE / STUDIO -->
-    <div id="view-create" class="space-y-10">
+    <!-- VIEW 1: CUTTER STUDIO / CONSOLE -->
+    <section id="view-studio" class="space-y-12">
       
-      <!-- HERO SECTION -->
-      <div class="text-center max-w-3xl mx-auto space-y-4 pt-4">
-        <div class="inline-flex items-center space-x-2 bg-brand-surface border border-brand-border/80 px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-300">
-          <span class="flex h-2 w-2 rounded-full bg-brand-volt animate-ping"></span>
-          <span>Детектор хайпа по звуку + чату Twitch/YouTube</span>
+      <!-- HERO: Bold Typography with Asymmetric Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end pt-4 pb-2 border-b border-chik-border/40 pb-8">
+        <div class="lg:col-span-8 space-y-4">
+          <div class="inline-flex items-center space-x-2 font-mono text-[11px] text-chik-volt uppercase tracking-widest border border-chik-volt/30 px-3 py-1 bg-chik-volt/5">
+            <span class="w-2 h-2 bg-chik-volt inline-block"></span>
+            <span>NO-TIMELINE // AUTONOMOUS HIGHLIGHT EXTRACTION</span>
+          </div>
+          <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.95]">
+            ИЗ СТРИМА — В ШОРТС <br>
+            <span class="text-chik-volt">ЧЕРЕЗ 2 МИНУТЫ.</span> <br>
+            <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖКИ.</span>
+          </h1>
         </div>
-        <h1 class="text-4xl sm:text-6xl font-black tracking-tight text-white leading-tight">
-          Из стрима — в вирусный клип <br class="hidden sm:inline">
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-volt via-green-300 to-brand-violet">
-            без монтажки
-          </span>
-        </h1>
-        <p class="text-slate-400 text-base sm:text-lg max-w-xl mx-auto">
-          Автопилот ловит самые сочные моменты, трекает лицо, накладывает динамичный геймплей и караоке-субтитры в 9:16.
-        </p>
+        <div class="lg:col-span-4 font-mono text-xs text-chik-muted space-y-3">
+          <p class="leading-relaxed">
+            Автопилот слушает аудио-взрывы (крик, смех, хайп), сканирует эмодзи чата Twitch и автоматически форматирует 9:16 со слежением за лицом и караоке-субтитрами.
+          </p>
+          <div class="flex items-center space-x-4 text-[10px] uppercase text-zinc-500 pt-2 border-t border-chik-border">
+            <span>● TWITCH VOD / LIVE</span>
+            <span>● YOUTUBE 4K</span>
+            <span>● WHISPER-RS</span>
+          </div>
+        </div>
       </div>
 
-      <!-- STREAM INPUT CARD -->
-      <div class="max-w-3xl mx-auto bg-brand-surface border border-brand-border rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div class="absolute -right-16 -top-16 w-48 h-48 bg-brand-volt/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -left-16 -bottom-16 w-48 h-48 bg-brand-violet/10 rounded-full blur-3xl pointer-events-none"></div>
+      <!-- CUTTER CONSOLE: Hardware Flight Deck Design -->
+      <div class="crosshair-box border border-chik-border bg-chik-surface p-6 sm:p-10 shadow-2xl relative">
+        <div class="flex items-center justify-between border-b border-chik-border pb-4 mb-8 font-mono text-xs">
+          <div class="flex items-center space-x-2 text-zinc-400">
+            <span class="w-2 h-2 bg-chik-coral rounded-full animate-pulse"></span>
+            <span class="font-bold text-white uppercase tracking-wider">CUTTER CONSOLE v0.2</span>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] text-chik-muted">
+            <button type="button" onclick="insertDemoUrl('twitch')" class="hover:text-chik-volt transition underline">
+              [ДЕМО TWITCH]
+            </button>
+            <button type="button" onclick="insertDemoUrl('youtube')" class="hover:text-chik-volt transition underline">
+              [ДЕМО YOUTUBE]
+            </button>
+          </div>
+        </div>
 
-        <form id="job-form" onsubmit="handleStartJob(event)" class="space-y-6 relative z-10">
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Ссылка на стрим или видео (Twitch / YouTube)
-            </label>
-            <div class="relative">
+        <form id="job-form" onsubmit="handleStartJob(event)" class="space-y-8">
+          
+          <!-- Master Input -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center font-mono text-xs">
+              <label class="font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                <span>[01] ИСТОЧНИК СТРИМА</span>
+                <span class="text-chik-muted font-normal">(VOD или ссылка на канал)</span>
+              </label>
+              <span id="detected-platform" class="text-chik-volt text-[11px] font-bold"></span>
+            </div>
+            
+            <div class="relative flex items-center">
               <input 
                 type="text" 
                 id="stream-url" 
                 required
-                placeholder="https://www.twitch.tv/streamer или https://youtu.be/..." 
-                class="w-full bg-brand-dark/90 border border-brand-border text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-brand-volt focus:ring-1 focus:ring-brand-volt text-sm sm:text-base transition placeholder-slate-600 font-mono"
+                oninput="detectPlatform(this.value)"
+                placeholder="Вставь ссылку: https://twitch.tv/streamer или https://youtu.be/..." 
+                class="w-full bg-chik-black border border-chik-borderLight focus:border-chik-volt text-white font-mono text-sm sm:text-base px-5 py-4 focus:outline-none transition placeholder:text-zinc-600"
               >
-              <button 
-                type="button" 
-                onclick="insertDemoUrl()" 
-                class="absolute right-2.5 top-2.5 text-xs bg-brand-surfaceHover hover:bg-brand-border text-slate-300 px-2.5 py-1.5 rounded-lg border border-brand-border transition"
-              >
-                Тестовый стрим
-              </button>
             </div>
           </div>
 
-          <!-- Mode & Settings Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Configuration Matrix -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
             
-            <!-- Mode -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Режим автопилота</label>
-              <select id="job-mode" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
-                <option value="auto">⚡ Авто-хайп (VOD топ-моменты)</option>
-                <option value="live">🔴 Live-эфир (стрим онлайн)</option>
+            <!-- Matrix 1: Mode -->
+            <div class="border border-chik-border bg-chik-card p-5 space-y-3">
+              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+                [02] РЕЖИМ РАБОТЫ
+              </label>
+              <select id="job-mode" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+                <option value="auto">⚡ АВТО-ХАЙП (Лучшие моменты VOD)</option>
+                <option value="live">🔴 LIVE-МОНИТОР (Ждать хайп в эфире)</option>
               </select>
+              <p class="font-mono text-[10px] text-chik-muted">Авто-хайп сканирует весь стрим за секунды и нарезает пики эмоций.</p>
             </div>
 
-            <!-- Clips Count -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Количество клипов</label>
-              <select id="job-count" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
-                <option value="1">1 клип (быстро)</option>
-                <option value="3" selected>3 сочных клипа</option>
-                <option value="5">5 лучших моментов</option>
+            <!-- Matrix 2: Clips Count -->
+            <div class="border border-chik-border bg-chik-card p-5 space-y-3">
+              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+                [03] ПАКЕТ КЛИПОВ
+              </label>
+              <select id="job-count" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+                <option value="1">1 ТОПОВЫЙ КЛИП</option>
+                <option value="3" selected>3 САМЫХ СОЧНЫХ КЛИПА</option>
+                <option value="5">5 ВИРУСНЫХ КЛИПОВ</option>
               </select>
+              <p class="font-mono text-[10px] text-chik-muted">Каждый клип оценивается хайп-скором и сопровождается титрами.</p>
             </div>
 
-            <!-- Background Gameplay -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Фоновый геймплей</label>
-              <select id="job-gameplay" class="w-full bg-brand-dark border border-brand-border text-white text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-volt transition">
-                <option value="subway">Subway Surfers</option>
-                <option value="minecraft">Minecraft Parkour</option>
-                <option value="gta">GTA V Ramp</option>
-                <option value="asmr">Soap / Kinetic Sand ASMR</option>
-                <option value="none">Без геймплея (вебка + стрим)</option>
+            <!-- Matrix 3: Gameplay Background -->
+            <div class="border border-chik-border bg-chik-card p-5 space-y-3">
+              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+                [04] НИЖНИЙ ГЕЙМПЛЕЙ (9:16)
+              </label>
+              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+                <option value="subway">SUBWAY SURFERS (Классика)</option>
+                <option value="minecraft">MINECRAFT PARKOUR</option>
+                <option value="gta">GTA V MEGA-RAMP</option>
+                <option value="asmr">SOAP CUTTING / ASMR</option>
+                <option value="none">БЕЗ ИГРЫ (Вебка + Стрим)</option>
               </select>
+              <p class="font-mono text-[10px] text-chik-muted">Удерживает внимание зрителя в ленте рекомендаций TikTok и Shorts.</p>
             </div>
 
           </div>
 
-          <!-- Action Button -->
-          <button 
-            type="submit" 
-            id="btn-submit-job"
-            class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold text-lg py-4 rounded-xl transition duration-200 transform hover:-translate-y-0.5 shadow-xl glow-volt flex items-center justify-center space-x-2"
-          >
-            <span>ЧИКНУТЬ СТРИМ</span>
-            <span class="text-xl">✂️</span>
-          </button>
+          <!-- Launch Button: Big, Tactile, Industrial -->
+          <div class="pt-4">
+            <button 
+              type="submit" 
+              id="btn-submit-job"
+              onmousedown="playClickSound()"
+              class="w-full bg-chik-volt hover:bg-chik-voltHover text-black font-display font-black text-xl sm:text-2xl uppercase tracking-wider py-5 border border-chik-volt transition duration-200 shadow-xl glow-laser flex items-center justify-center space-x-3 group"
+            >
+              <span>ЧИКНУТЬ СТРИМ</span>
+              <span class="text-2xl transform group-hover:rotate-45 transition duration-300">✂</span>
+            </button>
+          </div>
+
         </form>
       </div>
 
-      <!-- ACTIVE PROCESSING / STATUS WIDGET -->
-      <div id="active-job-card" class="hidden max-w-3xl mx-auto bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
+      <!-- LIVE PROGRESS TELEMETRY WIDGET -->
+      <div id="active-job-card" class="hidden crosshair-box border border-chik-volt/60 bg-chik-surface p-6 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between border-b border-chik-border pb-3 font-mono">
           <div class="flex items-center space-x-3">
-            <span class="flex h-3 w-3 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-volt opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-brand-volt"></span>
-            </span>
+            <div class="flex items-end space-x-1 h-4">
+              <div class="w-1 bg-chik-volt eq-bar"></div>
+              <div class="w-1 bg-chik-volt eq-bar"></div>
+              <div class="w-1 bg-chik-volt eq-bar"></div>
+              <div class="w-1 bg-chik-volt eq-bar"></div>
+              <div class="w-1 bg-chik-volt eq-bar"></div>
+            </div>
             <div>
-              <h3 class="font-bold text-sm text-white" id="active-job-title">Обработка стрима...</h3>
-              <p class="text-xs text-slate-400 font-mono" id="active-job-url"></p>
+              <h3 class="font-bold text-sm text-white uppercase" id="active-job-title">Обработка стрима...</h3>
+              <p class="text-[10px] text-chik-muted" id="active-job-url"></p>
             </div>
           </div>
-          <span id="active-job-percent" class="font-mono text-xl font-black text-brand-volt">0%</span>
+          <div class="text-right">
+            <span id="active-job-percent" class="font-mono text-2xl font-black text-chik-volt">0%</span>
+          </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="w-full bg-brand-dark rounded-full h-2.5 overflow-hidden border border-brand-border">
-          <div id="active-progress-bar" class="bg-gradient-to-r from-brand-violet to-brand-volt h-2.5 rounded-full transition-all duration-300" style="width: 5%"></div>
+        <!-- Stepped Precision Progress Bar -->
+        <div class="w-full bg-chik-black border border-chik-border h-3 overflow-hidden p-0.5">
+          <div id="active-progress-bar" class="bg-chik-volt h-full transition-all duration-300" style="width: 5%"></div>
         </div>
 
-        <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
-          <span id="active-job-stage">Инициализация пайплайна...</span>
-          <span id="active-job-time">в реальном времени</span>
+        <div class="flex items-center justify-between font-mono text-xs text-chik-muted">
+          <span id="active-job-stage" class="text-white">Инициализация конвейера...</span>
+          <span class="text-chik-volt font-bold">[REALTIME TELEMETRY]</span>
         </div>
       </div>
 
-      <!-- HOW IT WORKS BANNER -->
-      <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
-          <div class="text-2xl">👂</div>
-          <h4 class="font-bold text-white text-sm">Слушает и читает чат</h4>
-          <p class="text-xs text-slate-400">Алгоритм ловит пики эмоций (громкий смех, ор) и всплески спама реакций в чате (KEKW, LUL, Pog).</p>
+      <!-- BRAND PRINCIPLES / FEATURES -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
+          <div class="font-mono text-chik-volt text-xs font-bold">[01 // АУДИО-АНАЛИЗАТОР]</div>
+          <h4 class="font-display font-extrabold text-lg text-white uppercase">Ловит настоящий крик и смех</h4>
+          <p class="font-mono text-xs text-chik-muted leading-relaxed">
+            Адаптивная формула MAD отделяет фоновый шум игры от искренней человеческой реакции. Никаких унылых разговорных пауз.
+          </p>
         </div>
-        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
-          <div class="text-2xl">🎯</div>
-          <h4 class="font-bold text-white text-sm">Умное кадрирование</h4>
-          <p class="text-xs text-slate-400">Нейросеть делит экран 9:16 на стрим и вебку с плавным слежением за лицом стримера.</p>
+
+        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
+          <div class="font-mono text-chik-volt text-xs font-bold">[02 // TWITCH ЧАТ-СКОР]</div>
+          <h4 class="font-display font-extrabold text-lg text-white uppercase">Всплески KEKW и PogChamp</h4>
+          <p class="font-mono text-xs text-chik-muted leading-relaxed">
+            Чат взвешивается по эмоциям: 10 сообщений с KEKW важнее сотни обычных реплик. Момент утверждается только при консенсусе.
+          </p>
         </div>
-        <div class="bg-brand-surface/60 border border-brand-border/60 p-5 rounded-2xl space-y-2">
-          <div class="text-2xl">🔥</div>
-          <h4 class="font-bold text-white text-sm">Караоке-субтитры</h4>
-          <p class="text-xs text-slate-400">Whisper генерирует динамичные субтитры с подсветкой каждого слова прямо в такт речи.</p>
+
+        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
+          <div class="font-mono text-chik-volt text-xs font-bold">[03 // СУБТИТРЫ КАРАОКЕ]</div>
+          <h4 class="font-display font-extrabold text-lg text-white uppercase">Каждое слово в такт</h4>
+          <p class="font-mono text-xs text-chik-muted leading-relaxed">
+            Локальная нейросеть Whisper генерирует субтитры с посекундной подсветкой слов. Зритель задерживается на ролике на 70% дольше.
+          </p>
         </div>
       </div>
 
-    </div>
+    </section>
 
-    <!-- VIEW: REELS GALLERY -->
-    <div id="view-reels" class="hidden space-y-6">
-      <div class="flex items-center justify-between">
+    <!-- VIEW 2: REELS GALLERY -->
+    <section id="view-reels" class="hidden space-y-8">
+      <div class="flex items-center justify-between border-b border-chik-border pb-4">
         <div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Готовые нарезки</h2>
-          <p class="text-sm text-slate-400">Вертикальные клипы для публикации в Shorts, TikTok и Reels</p>
+          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">ВИДЕО-ОБОЙМА</h2>
+          <p class="font-mono text-xs text-chik-muted uppercase">ГОТОВЫЕ ВЕРТИКАЛЬНЫЕ РИЛСЫ 9:16 ДЛЯ TIKTOK / SHORTS</p>
         </div>
-        <button onclick="loadReels()" class="text-xs font-mono text-slate-300 hover:text-white bg-brand-surface border border-brand-border px-3 py-1.5 rounded-lg transition">
-          🔄 Обновить
+        <button onclick="loadReels()" class="font-mono text-xs uppercase font-bold text-black bg-chik-volt hover:bg-white px-4 py-2 border border-chik-volt transition">
+          ОБНОВИТЬ СПИСОК
         </button>
       </div>
 
+      <!-- Reels Grid -->
       <div id="reels-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <!-- Reel Cards injected by JS -->
+        <!-- Rendered by JS -->
       </div>
 
-      <div id="reels-empty" class="hidden text-center py-16 space-y-4">
-        <div class="text-5xl">✂️</div>
-        <h3 class="text-lg font-bold text-white">Пока нет нарезанных клипов</h3>
-        <p class="text-sm text-slate-400 max-w-sm mx-auto">Вставь ссылку на стрим на главной, и автопилот сделает первые клипы за 2 минуты.</p>
-        <button onclick="switchView('create')" class="bg-brand-volt text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-yellow-300 transition">
-          Сделать первый клип
+      <!-- Empty State -->
+      <div id="reels-empty" class="hidden text-center py-20 border border-dashed border-chik-border space-y-4">
+        <div class="font-mono text-4xl text-zinc-600">✂ [NO_CLIPS_YET]</div>
+        <h3 class="font-display font-bold text-xl uppercase text-white">Обойма клипов пуста</h3>
+        <p class="font-mono text-xs text-chik-muted max-w-sm mx-auto">
+          Вставь ссылку на стрим на главном пульте, и автопилот нарежет первые ролики.
+        </p>
+        <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold bg-chik-volt text-black px-6 py-3 border border-chik-volt hover:bg-white transition">
+          НАРЕЗАТЬ СТРИМ СЕЙЧАС
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- VIEW: PRICING -->
-    <div id="view-pricing" class="hidden space-y-8 max-w-5xl mx-auto py-4">
+    <!-- VIEW 3: PRICING -->
+    <section id="view-pricing" class="hidden space-y-10 max-w-5xl mx-auto py-6">
       <div class="text-center space-y-3">
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Прозрачные тарифы без скрытых платежей</h2>
-        <p class="text-slate-400 text-sm max-w-md mx-auto">Оплата за готовые клипы. Никаких подписок, которые забываешь отменить.</p>
+        <div class="inline-block font-mono text-xs text-chik-volt uppercase tracking-widest">[ PAY-AS-YOU-GO ]</div>
+        <h2 class="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
+          ЧЕСТНАЯ ОПЛАТА ЗА КЛИПЫ
+        </h2>
+        <p class="font-mono text-xs text-chik-muted max-w-md mx-auto">
+          Никаких подписок, списывающих деньги каждый месяц. Покупай кредиты пачками и режь стримы когда удобно.
+        </p>
       </div>
 
       <div id="packages-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-        <!-- Rendered by JS -->
+        <!-- Injected by JS -->
       </div>
-    </div>
+    </section>
 
   </main>
 
-  <!-- REEL PLAYER MODAL (9:16) -->
-  <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-brand-surface border border-brand-border rounded-2xl max-w-4xl w-full flex flex-col md:flex-row overflow-hidden max-h-[90vh]">
+  <!-- 9:16 VIEWFINDER REEL PLAYER MODAL -->
+  <div id="player-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+    <div class="crosshair-box bg-chik-surface border border-chik-border max-w-4xl w-full flex flex-col md:flex-row overflow-hidden max-h-[92vh] shadow-2xl">
       
-      <!-- Video Container 9:16 -->
-      <div class="bg-black flex items-center justify-center p-4 md:w-1/2">
-        <div class="reel-aspect h-[65vh] max-h-[580px] bg-neutral-900 rounded-xl overflow-hidden relative shadow-2xl border border-brand-border">
+      <!-- Left: 9:16 Viewfinder Frame -->
+      <div class="bg-black flex items-center justify-center p-4 md:w-1/2 relative">
+        <div class="aspect-reel h-[65vh] max-h-[580px] bg-zinc-950 border border-chik-border relative overflow-hidden shadow-2xl">
           <video id="modal-video" controls autoplay playsinline class="w-full h-full object-cover"></video>
+          
+          <!-- Viewfinder HUD Overlays -->
+          <div class="absolute top-2 left-2 text-[9px] font-mono text-chik-coral flex items-center space-x-1 select-none pointer-events-none">
+            <span class="w-1.5 h-1.5 rounded-full bg-chik-coral animate-ping"></span>
+            <span>● REC 00:28:14</span>
+          </div>
+          <div class="absolute bottom-2 right-2 text-[9px] font-mono text-zinc-500 select-none pointer-events-none">
+            9:16 SAFE_ZONE
+          </div>
         </div>
       </div>
 
-      <!-- Details & Actions -->
-      <div class="p-6 md:w-1/2 flex flex-col justify-between space-y-4 overflow-y-auto">
+      <!-- Right: Meta, Transcript, Export Studio -->
+      <div class="p-6 md:w-1/2 flex flex-col justify-between space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-chik-border">
         <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono px-2.5 py-1 rounded bg-brand-volt/10 text-brand-volt border border-brand-volt/30 font-bold" id="modal-hype-score">
-              🔥 ХАЙП-СКОР 95%
+          <div class="flex items-center justify-between border-b border-chik-border pb-3">
+            <span class="font-mono text-xs font-bold px-2 py-0.5 bg-chik-volt text-black uppercase" id="modal-hype-score">
+              🔥 ХАЙП: 95%
             </span>
-            <button onclick="closePlayerModal()" class="text-slate-400 hover:text-white p-1 text-xl">✕</button>
+            <button onclick="closePlayerModal()" class="font-mono text-sm text-zinc-400 hover:text-white px-2 py-1 border border-chik-border hover:border-white transition">
+              [✕ ЗАКРЫТЬ]
+            </button>
           </div>
 
           <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Заголовок</label>
-            <h3 id="modal-title" class="font-extrabold text-lg text-white"></h3>
+            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ЗАГОЛОВОК ДЛЯ TIKTOK / SHORTS</label>
+            <h3 id="modal-title" class="font-display font-extrabold text-xl text-white"></h3>
           </div>
 
           <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Описание для публикации</label>
-            <div id="modal-desc" class="text-xs text-slate-300 bg-brand-dark p-3 rounded-xl border border-brand-border whitespace-pre-wrap font-sans max-h-32 overflow-y-auto"></div>
+            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ОПИСАНИЕ ИЗ ТРАНСКРИПТА</label>
+            <div id="modal-desc" class="font-mono text-xs text-zinc-300 bg-chik-black p-3 border border-chik-border whitespace-pre-wrap max-h-36 overflow-y-auto"></div>
           </div>
 
           <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Хештеги</label>
-            <div id="modal-tags" class="text-xs font-mono text-brand-volt"></div>
+            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ХЕШТЕГИ</label>
+            <div id="modal-tags" class="font-mono text-xs text-chik-volt font-bold"></div>
           </div>
         </div>
 
-        <div class="space-y-2 pt-4 border-t border-brand-border">
-          <button onclick="copyModalCaptions()" class="w-full bg-brand-surfaceHover hover:bg-brand-border text-white text-xs font-bold py-2.5 rounded-xl border border-brand-border transition flex items-center justify-center space-x-1.5">
-            <span>📋 Скопировать текст и хештеги</span>
+        <!-- Actions -->
+        <div class="space-y-2 pt-4 border-t border-chik-border">
+          <button onclick="copyModalCaptions()" class="w-full font-mono text-xs uppercase font-bold py-3 bg-chik-card border border-chik-border hover:border-chik-volt text-white transition flex items-center justify-center space-x-2">
+            <span>📋 СКОПИРОВАТЬ ТЕКСТ + ХЕШТЕГИ</span>
           </button>
-          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold text-sm py-3 rounded-xl transition glow-volt flex items-center justify-center space-x-2">
-            <span>⬇️ Скачать Full HD клип</span>
+          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full font-mono text-xs uppercase font-black py-3.5 bg-chik-volt text-black border border-chik-volt hover:bg-white transition glow-laser-sm flex items-center justify-center space-x-2">
+            <span>⬇ СКАЧАТЬ ЧИСТЫЙ FULL HD</span>
           </button>
         </div>
       </div>
@@ -358,35 +504,35 @@
   </div>
 
   <!-- AUTH MODAL -->
-  <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-brand-surface border border-brand-border rounded-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative shadow-2xl">
-      <button onclick="closeAuthModal()" class="absolute right-4 top-4 text-slate-400 hover:text-white text-xl">✕</button>
+  <div id="auth-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="crosshair-box bg-chik-surface border border-chik-border max-w-md w-full p-8 space-y-6 relative shadow-2xl">
+      <button onclick="closeAuthModal()" class="absolute right-4 top-4 font-mono text-xs text-zinc-400 hover:text-white">[✕]</button>
 
-      <div class="text-center space-y-1">
-        <div class="text-3xl mb-1">✂️</div>
-        <h3 id="auth-modal-title" class="text-xl font-extrabold text-white">Вход в ЧИК</h3>
-        <p class="text-xs text-slate-400" id="auth-modal-subtitle">Автопилот вирусных нарезок</p>
+      <div class="space-y-1">
+        <div class="font-mono text-xs text-chik-volt uppercase font-bold">[ АВТОРИЗАЦИЯ ]</div>
+        <h3 id="auth-modal-title" class="font-display font-black text-2xl uppercase text-white">ВХОД В ЧИК</h3>
+        <p class="font-mono text-xs text-chik-muted" id="auth-modal-subtitle">Автопилот вирусных нарезок</p>
       </div>
 
-      <div class="flex border-b border-brand-border text-sm font-semibold">
-        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition">Вход</button>
-        <button id="tab-register" onclick="setAuthTab('register')" class="flex-1 pb-3 text-slate-400 hover:text-white transition">Регистрация (+5 клипов)</button>
+      <div class="flex border-b border-chik-border font-mono text-xs">
+        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition">ВХОД</button>
+        <button id="tab-register" onclick="setAuthTab('register')" class="flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition">РЕГИСТРАЦИЯ (+5 КЛИПОВ)</button>
       </div>
 
-      <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-4 font-mono">
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email</label>
-          <input type="email" id="auth-email" required placeholder="streamer@twitch.tv" class="w-full bg-brand-dark border border-brand-border text-white px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-volt">
+          <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">EMAIL</label>
+          <input type="email" id="auth-email" required placeholder="streamer@twitch.tv" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-volt">
         </div>
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Пароль</label>
-          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-brand-dark border border-brand-border text-white px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-volt">
+          <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ПАРОЛЬ</label>
+          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-volt">
         </div>
 
-        <div id="auth-error" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-900/60 p-2.5 rounded-lg font-mono"></div>
+        <div id="auth-error" class="hidden text-xs text-chik-coral bg-red-950/30 border border-chik-coral/40 p-2 font-mono"></div>
 
-        <button type="submit" id="auth-submit-btn" class="w-full bg-brand-volt hover:bg-yellow-300 text-black font-extrabold py-3 rounded-xl text-sm transition glow-volt">
-          Войти
+        <button type="submit" id="auth-submit-btn" class="w-full bg-chik-volt hover:bg-white text-black font-black py-3 text-xs uppercase tracking-wider transition glow-laser-sm">
+          ВОЙТИ В СИСТЕМУ
         </button>
       </form>
     </div>
@@ -401,29 +547,78 @@
     let currentModalReel = null;
     let ws = null;
 
-    // Switch View Tabs
+    // Web Audio Synthesizer for tactile feedback
+    function playClickSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    // Platform detection (Twitch / YouTube icon feedback)
+    function detectPlatform(val) {
+      const badge = document.getElementById('detected-platform');
+      if (val.includes('twitch.tv')) {
+        badge.innerText = '🟣 ОБНАРУЖЕН TWITCH';
+        badge.className = 'text-purple-400 text-[11px] font-bold font-mono';
+      } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
+        badge.innerText = '🔴 ОБНАРУЖЕН YOUTUBE';
+        badge.className = 'text-red-400 text-[11px] font-bold font-mono';
+      } else {
+        badge.innerText = '';
+      }
+    }
+
+    // UTC Clock
+    function updateClock() {
+      const now = new Date();
+      const el = document.getElementById('clock-display');
+      if (el) el.innerText = now.toISOString().substring(11, 19) + ' UTC';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Switch View
     function switchView(viewName) {
-      ['create', 'reels', 'pricing'].forEach(v => {
+      playClickSound();
+      ['studio', 'reels', 'pricing'].forEach(v => {
         const el = document.getElementById('view-' + v);
         const nav = document.getElementById('nav-' + v);
         if (v === viewName) {
           el.classList.remove('hidden');
-          if (nav) nav.className = "text-brand-volt hover:text-white transition";
+          if (nav) nav.className = "px-4 py-2 text-black bg-chik-volt font-bold uppercase tracking-wider transition";
         } else {
           el.classList.add('hidden');
-          if (nav) nav.className = "text-slate-400 hover:text-white transition";
+          if (nav) nav.className = "px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition";
         }
       });
       if (viewName === 'reels') loadReels();
       if (viewName === 'pricing') loadPackages();
     }
 
-    // Demo URL
-    function insertDemoUrl() {
-      document.getElementById('stream-url').value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    // Demo URLs
+    function insertDemoUrl(type) {
+      playClickSound();
+      const input = document.getElementById('stream-url');
+      if (type === 'twitch') {
+        input.value = 'https://www.twitch.tv/dmitro_streamer';
+      } else {
+        input.value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+      }
+      detectPlatform(input.value);
     }
 
-    // Auth state check
+    // Auth Init
     async function initAuth() {
       if (!currentToken) {
         updateAuthUI(null);
@@ -466,6 +661,7 @@
     }
 
     function logout() {
+      playClickSound();
       localStorage.removeItem('chik_token');
       currentToken = null;
       currentUser = null;
@@ -474,6 +670,7 @@
 
     // Modals
     function openAuthModal(mode) {
+      playClickSound();
       authMode = mode;
       setAuthTab(mode);
       document.getElementById('auth-modal').classList.remove('hidden');
@@ -481,6 +678,7 @@
     }
 
     function closeAuthModal() {
+      playClickSound();
       document.getElementById('auth-modal').classList.add('hidden');
     }
 
@@ -492,20 +690,21 @@
       const btn = document.getElementById('auth-submit-btn');
 
       if (mode === 'login') {
-        tabLogin.className = "flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition";
-        tabReg.className = "flex-1 pb-3 text-slate-400 hover:text-white transition";
-        title.innerText = "Вход в ЧИК";
-        btn.innerText = "Войти";
+        tabLogin.className = "flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition";
+        tabReg.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
+        title.innerText = "ВХОД В ЧИК";
+        btn.innerText = "ВОЙТИ В СИСТЕМУ";
       } else {
-        tabReg.className = "flex-1 pb-3 text-brand-volt border-b-2 border-brand-volt transition";
-        tabLogin.className = "flex-1 pb-3 text-slate-400 hover:text-white transition";
-        title.innerText = "Регистрация в ЧИК";
-        btn.innerText = "Создать аккаунт (+5 кредитов)";
+        tabReg.className = "flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition";
+        tabLogin.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
+        title.innerText = "РЕГИСТРАЦИЯ СТРИМЕРА";
+        btn.innerText = "СОЗДАТЬ АККАУНТ (+5 КЛИПОВ)";
       }
     }
 
     async function handleAuthSubmit(e) {
       e.preventDefault();
+      playClickSound();
       const email = document.getElementById('auth-email').value;
       const password = document.getElementById('auth-password').value;
       const errorDiv = document.getElementById('auth-error');
@@ -538,6 +737,7 @@
     // Submit Job
     async function handleStartJob(e) {
       e.preventDefault();
+      playClickSound();
       if (!currentUser) {
         openAuthModal('register');
         return;
@@ -577,9 +777,9 @@
     function showActiveJobWidget(job) {
       const widget = document.getElementById('active-job-card');
       widget.classList.remove('hidden');
-      document.getElementById('active-job-title').innerText = `Нарезка: ${job.channel_name}`;
+      document.getElementById('active-job-title').innerText = `НАРЕЗКА: ${job.channel_name}`;
       document.getElementById('active-job-url').innerText = job.stream_url;
-      updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди...');
+      updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди конвейера...');
     }
 
     function updateJobProgress(percent, stage) {
@@ -611,28 +811,28 @@
 
         reels.forEach(r => {
           const card = document.createElement('div');
-          card.className = "bg-brand-surface border border-brand-border hover:border-brand-volt/50 rounded-2xl overflow-hidden transition duration-200 flex flex-col group cursor-pointer shadow-lg";
+          card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-volt transition duration-200 flex flex-col group cursor-pointer shadow-xl";
           card.onclick = () => openPlayerModal(r);
           card.innerHTML = `
-            <div class="reel-aspect bg-black relative overflow-hidden flex items-center justify-center">
-              <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"></video>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono font-bold text-brand-volt border border-brand-volt/30">
+            <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
+              <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+              <div class="absolute top-2.5 right-2.5 bg-chik-black/90 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-volt border border-chik-volt/40">
                 🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
               </div>
-              <div class="absolute bottom-3 left-3 right-3">
-                <h4 class="font-bold text-sm text-white line-clamp-2">${r.title}</h4>
-                <p class="text-[11px] text-slate-400 font-mono mt-1">${Math.round(r.duration_secs)} сек • 9:16 Shorts</p>
+              <div class="absolute bottom-3 left-3 right-3 space-y-1">
+                <h4 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h4>
+                <p class="font-mono text-[10px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</p>
               </div>
-              <div class="w-12 h-12 rounded-full bg-brand-volt/90 text-black flex items-center justify-center text-lg absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-volt">
+              <div class="w-11 h-11 bg-chik-volt text-black flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-laser-sm">
                 ▶
               </div>
             </div>
-            <div class="p-3 border-t border-brand-border bg-brand-surface flex items-center justify-between text-xs">
-              <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-slate-400'}">
-                ${r.is_unlocked ? '✅ Готов к выгрузке' : '🔒 Нужен 1 кредит'}
+            <div class="p-3 border-t border-chik-border bg-chik-card flex items-center justify-between font-mono text-[11px]">
+              <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-500'}">
+                ${r.is_unlocked ? '✅ ГОТОВ' : '🔒 1 КРЕДИТ'}
               </span>
-              <span class="text-brand-volt font-bold">Смотреть →</span>
+              <span class="text-chik-volt font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
             </div>
           `;
           container.appendChild(card);
@@ -644,6 +844,7 @@
 
     // Modal Player
     function openPlayerModal(reel) {
+      playClickSound();
       currentModalReel = reel;
       const modal = document.getElementById('player-modal');
       const video = document.getElementById('modal-video');
@@ -655,20 +856,21 @@
 
       video.src = `/api/reels/${reel.id}/video`;
       title.innerText = reel.title;
-      desc.innerText = reel.description || 'Автоматически сгенерированное описание из транскрипта стрима.';
+      desc.innerText = reel.description || 'Автоматически сформированный транскрипт момента.';
       tags.innerText = reel.tags;
-      hype.innerText = `🔥 ХАЙП-СКОР ${Math.round(reel.hype_score * 100)}%`;
+      hype.innerText = `🔥 ХАЙП: ${Math.round(reel.hype_score * 100)}%`;
 
       if (reel.is_unlocked) {
-        downloadBtn.innerHTML = `<span>⬇️ Скачать чистый Full HD</span>`;
+        downloadBtn.innerHTML = `<span>⬇ СКАЧАТЬ ЧИСТЫЙ FULL HD</span>`;
       } else {
-        downloadBtn.innerHTML = `<span>🔓 Разблокировать за 1 кредит</span>`;
+        downloadBtn.innerHTML = `<span>🔓 РАЗБЛОКИРОВАТЬ ЗА 1 КРЕДИТ</span>`;
       }
 
       modal.classList.remove('hidden');
     }
 
     function closePlayerModal() {
+      playClickSound();
       const modal = document.getElementById('player-modal');
       const video = document.getElementById('modal-video');
       video.pause();
@@ -677,22 +879,22 @@
     }
 
     function copyModalCaptions() {
+      playClickSound();
       if (!currentModalReel) return;
       const text = `${currentModalReel.title}\n\n${currentModalReel.description}\n\n${currentModalReel.tags}`;
       navigator.clipboard.writeText(text);
-      alert('Текст, описание и теги скопированы в буфер!');
+      alert('Текст, описание и теги скопированы в буфер обмена!');
     }
 
     async function handleModalDownload() {
+      playClickSound();
       if (!currentModalReel) return;
       if (currentModalReel.is_unlocked) {
-        // Direct download
         const a = document.createElement('a');
         a.href = `/api/reels/${currentModalReel.id}/video`;
         a.download = `${currentModalReel.title}.mp4`;
         a.click();
       } else {
-        // Unlock with credit
         try {
           const res = await fetch('/api/reels/unlock', {
             method: 'POST',
@@ -719,7 +921,7 @@
       }
     }
 
-    // Load Packages
+    // Packages
     async function loadPackages() {
       try {
         const res = await fetch('/api/billing/packages');
@@ -729,19 +931,20 @@
 
         packs.forEach(p => {
           const card = document.createElement('div');
-          card.className = `bg-brand-surface border ${p.is_popular ? 'border-brand-volt glow-volt' : 'border-brand-border'} rounded-2xl p-6 sm:p-8 flex flex-col justify-between space-y-6 relative overflow-hidden`;
+          card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-volt glow-laser' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
           card.innerHTML = `
-            ${p.is_popular ? '<div class="absolute -right-12 top-6 bg-brand-volt text-black text-[10px] font-black uppercase tracking-wider py-1 px-12 transform rotate-45">Хит 🔥</div>' : ''}
+            ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-volt text-black font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
             <div class="space-y-4">
-              <h3 class="text-xl font-black text-white">${p.name}</h3>
-              <p class="text-xs text-slate-400">${p.description}</p>
-              <div class="pt-2">
-                <span class="text-3xl font-black text-white font-mono">${p.price_rub} ₽</span>
-                <span class="text-xs text-slate-400 ml-1">/ ${p.credits} клипов</span>
+              <div class="font-mono text-xs text-chik-volt uppercase font-bold">[ ПАКЕТ ]</div>
+              <h3 class="font-display font-black text-2xl uppercase text-white">${p.name}</h3>
+              <p class="font-mono text-xs text-chik-muted leading-relaxed">${p.description}</p>
+              <div class="pt-3 border-t border-chik-border">
+                <span class="font-mono text-4xl font-black text-white">${p.price_rub} ₽</span>
+                <span class="font-mono text-xs text-zinc-500 ml-1">/ ${p.credits} КЛИПОВ</span>
               </div>
             </div>
-            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-brand-volt text-black hover:bg-yellow-300' : 'bg-brand-surfaceHover text-white hover:bg-brand-border'} font-extrabold text-sm py-3 rounded-xl transition">
-              Купить пакет
+            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-volt text-black hover:bg-white' : 'bg-chik-card text-white hover:border-chik-volt border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
+              АКТИВИРОВАТЬ ПАКЕТ
             </button>
           `;
           grid.appendChild(card);
@@ -756,6 +959,7 @@
     }
 
     async function handleTopup(packageId) {
+      playClickSound();
       if (!currentUser) {
         openAuthModal('register');
         return;
@@ -774,7 +978,7 @@
           currentUser.credits = data.credits;
           updateAuthUI(currentUser);
           alert(data.message);
-          switchView('create');
+          switchView('studio');
         } else {
           alert(data.error || 'Ошибка пополнения');
         }
@@ -783,7 +987,7 @@
       }
     }
 
-    // WebSocket connection for real-time live events
+    // WebSocket for realtime telemetry & events
     function connectWs() {
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${proto}//${location.host}/api/ws`;
@@ -796,10 +1000,10 @@
             updateJobProgress(msg.percent, msg.stage);
           } else if (msg.type === 'job_status') {
             if (msg.status === 'completed') {
-              updateJobProgress(100, 'Готово! Клипы нарезаны.');
+              updateJobProgress(100, 'КОНВЕЙЕР ЗАВЕРШЕН. КЛИПЫ ГОТОВЫ.');
               loadReels();
             } else if (msg.status === 'failed') {
-              updateJobProgress(100, 'Ошибка: ' + (msg.error || 'не удалось нарезать'));
+              updateJobProgress(100, 'СБОЙ: ' + (msg.error || 'ошибка нарезки'));
             }
           } else if (msg.type === 'reel_created') {
             loadReels();
@@ -815,7 +1019,7 @@
       };
 
       ws.onclose = () => {
-        setTimeout(connectWs, 3000); // reconnect
+        setTimeout(connectWs, 3000);
       };
     }
 
