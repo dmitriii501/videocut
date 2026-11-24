@@ -88,6 +88,9 @@ pub fn model_path() -> Result<PathBuf> {
     for cand in [
         models.join(format!("{name}.bin")),
         models.join(format!("ggml-{name}.bin")),
+        models.join("ggml-base.bin"),
+        models.join("base.bin"),
+        models.join("ggml-large-v3-turbo.bin"),
     ] {
         if cand.exists() {
             return Ok(cand);

@@ -220,6 +220,10 @@ pub fn run_live(job: &LiveJob) -> Result<Vec<PathBuf>> {
             let mut hit: Option<Hit> = None;
 
             loop {
+                if should_stop(job) {
+                    log("live: stop requested; exiting inner loop");
+                    break 'outer;
+                }
                 if !buf.is_alive() {
                     log("live: recorder stopped (stream ended); finishing");
                     break 'outer;
