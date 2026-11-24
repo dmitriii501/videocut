@@ -454,16 +454,17 @@ struct AudioPipeline {
     stream_index_out: usize,
     decoder: codec::decoder::Audio,
     encoder: codec::encoder::Audio,
+    filter: ffmpeg::filter::Graph,
     in_time_base: Rational,
     out_time_base: Rational,
     start: f64,
     end: f64,
     rate: u32,
+    sample_count: i64,
 }
 
-/// Set up audio: reuse the already-seeked demuxer, decode AAC and re-encode to
-/// AAC directly (native FLTP/stereo/rate — no filter needed). Timestamps are
-/// recomputed from wall-clock seconds relative to the clip start.
+/// Set up audio: reuse the already-seeked demuxer, decode audio, resample & buffer
+/// to fixed 1024 sample chunks (required by AAC), and encode to AAC.
 fn setup_audio(
     octx: &mut format::context::Output,
     ictx: &mut format::context::Input,
@@ -486,21 +487,42 @@ fn setup_audio(
     } else {
         decoder.channel_layout()
     };
-    let sample_fmt = decoder.format();
+    let sample_fmt = ffmpeg::format::Sample::F32(ffmpeg::format::sample::Type::Planar);
 
     let (encoder, out_index) = open_audio_encoder(octx, rate, layout, sample_fmt, global_header).ok()?;
     let out_time_base = Rational(1, rate as i32);
+
+    let mut filter = ffmpeg::filter::Graph::new();
+    let args = format!(
+        "time_base={}:sample_rate={}:sample_fmt={}:channel_layout=0x{:x}",
+        in_time_base,
+        rate,
+        decoder.format().name(),
+        layout.bits()
+    );
+    filter.add(&ffmpeg::filter::find("abuffer")?, "in", &args).ok()?;
+    filter.add(&ffmpeg::filter::find("abuffersink")?, "out", "").ok()?;
+    {
+        let mut out = filter.get("out")?;
+        out.set_sample_format(sample_fmt);
+        out.set_channel_layout(layout);
+        out.set_sample_rate(rate);
+    }
+    filter.output("in", 0).ok()?.input("out", 0).ok()?.parse("aresample,asetnsamples=n=1024:p=1").ok()?;
+    filter.validate().ok()?;
 
     Some(AudioPipeline {
         stream_index_in: index,
         stream_index_out: out_index,
         decoder,
         encoder,
+        filter,
         in_time_base,
         out_time_base,
         start,
         end: start + dur,
         rate,
+        sample_count: 0,
     })
 }
 
@@ -519,10 +541,31 @@ impl AudioPipeline {
             if t_sec > self.end {
                 break;
             }
-            let rel = ((t_sec - self.start).max(0.0) * self.rate as f64).round() as i64;
-            decoded.set_pts(Some(rel));
+            self.filter
+                .get("in")
+                .unwrap()
+                .source()
+                .add(&decoded)
+                .map_err(|e| anyhow!("audio filter add: {e}"))?;
+            self.drain_filtered(octx)?;
+        }
+        Ok(())
+    }
+
+    fn drain_filtered(&mut self, octx: &mut format::context::Output) -> Result<()> {
+        let mut filtered = frame::Audio::empty();
+        while self
+            .filter
+            .get("out")
+            .unwrap()
+            .sink()
+            .frame(&mut filtered)
+            .is_ok()
+        {
+            filtered.set_pts(Some(self.sample_count));
+            self.sample_count += filtered.samples() as i64;
             self.encoder
-                .send_frame(&decoded)
+                .send_frame(&filtered)
                 .map_err(|e| anyhow!("audio encoder send: {e}"))?;
             self.drain_encoded(octx)?;
         }
@@ -546,6 +589,8 @@ impl AudioPipeline {
     fn finish(&mut self, octx: &mut format::context::Output) -> Result<()> {
         self.decoder.send_eof().ok();
         self.receive_decoded(octx)?;
+        self.filter.get("in").unwrap().source().flush().ok();
+        self.drain_filtered(octx)?;
         self.encoder.send_eof().ok();
         self.drain_encoded(octx)?;
         Ok(())

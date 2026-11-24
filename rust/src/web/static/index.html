@@ -1027,13 +1027,17 @@
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'job_progress') {
-            updateJobProgress(msg.percent, msg.stage);
+            if (!activeJobId || msg.job_id === activeJobId) {
+              updateJobProgress(msg.percent, msg.stage);
+            }
           } else if (msg.type === 'job_status') {
-            if (msg.status === 'completed') {
-              updateJobProgress(100, 'КОНВЕЙЕР ЗАВЕРШЕН. КЛИПЫ ГОТОВЫ.');
-              loadReels();
-            } else if (msg.status === 'failed') {
-              updateJobProgress(100, 'СБОЙ: ' + (msg.error || 'ошибка нарезки'));
+            if (!activeJobId || msg.job_id === activeJobId) {
+              if (msg.status === 'completed') {
+                updateJobProgress(100, 'КОНВЕЙЕР ЗАВЕРШЕН. КЛИПЫ ГОТОВЫ.');
+                loadReels();
+              } else if (msg.status === 'failed') {
+                updateJobProgress(100, 'СБОЙ: ' + (msg.error || 'ошибка нарезки'));
+              }
             }
           } else if (msg.type === 'reel_created') {
             loadReels();
