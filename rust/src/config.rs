@@ -113,6 +113,12 @@ pub fn whisper_threads() -> i32 {
     env_parse("WHISPER_THREADS", 4)
 }
 
+/// How many whisper runs may execute simultaneously (RAM bound). The model is
+/// shared, but each active run needs working memory for its audio.
+pub fn whisper_concurrency() -> usize {
+    env_parse::<usize>("STREAMREELS_WHISPER_CONCURRENCY", 1).max(1)
+}
+
 // --- Subtitles ---------------------------------------------------------------
 
 pub fn subtitle_font() -> String {

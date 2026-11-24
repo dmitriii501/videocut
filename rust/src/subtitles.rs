@@ -6,10 +6,78 @@
 
 use anyhow::{anyhow, bail, Context, Result};
 use std::path::{Path, PathBuf};
+use std::sync::{Condvar, Mutex, OnceLock};
 
 use crate::config;
 use crate::media;
 use crate::utils::log;
+
+/// The whisper model is ~1.6 GB, so we load it **once** and share the context
+/// across all threads. Each transcription creates its own lightweight state.
+static CTX: OnceLock<whisper_rs::WhisperContext> = OnceLock::new();
+static LOAD_LOCK: Mutex<()> = Mutex::new(());
+
+/// Bounds how many whisper runs execute at once (RAM/CPU safety). Several
+/// threads may be preparing work, but only `N` hold a permit inside whisper.
+struct Semaphore {
+    count: Mutex<usize>,
+    cv: Condvar,
+}
+
+impl Semaphore {
+    fn acquire(&self) -> Permit<'_> {
+        let mut c = self.count.lock().unwrap();
+        while *c == 0 {
+            c = self.cv.wait(c).unwrap();
+        }
+        *c -= 1;
+        Permit { sem: self }
+    }
+
+    fn release(&self) {
+        let mut c = self.count.lock().unwrap();
+        *c += 1;
+        self.cv.notify_one();
+    }
+}
+
+struct Permit<'a> {
+    sem: &'a Semaphore,
+}
+
+impl Drop for Permit<'_> {
+    fn drop(&mut self) {
+        self.sem.release();
+    }
+}
+
+static SEM: OnceLock<Semaphore> = OnceLock::new();
+
+fn whisper_sem() -> &'static Semaphore {
+    SEM.get_or_init(|| Semaphore {
+        count: Mutex::new(config::whisper_concurrency()),
+        cv: Condvar::new(),
+    })
+}
+
+/// Load (or reuse) the shared whisper context.
+fn shared_ctx() -> Result<&'static whisper_rs::WhisperContext> {
+    use whisper_rs::{WhisperContext, WhisperContextParameters};
+
+    if let Some(ctx) = CTX.get() {
+        return Ok(ctx);
+    }
+    let _guard = LOAD_LOCK.lock().unwrap();
+    if let Some(ctx) = CTX.get() {
+        return Ok(ctx);
+    }
+    let model = model_path()?;
+    log(format!("loading whisper model {}", model.display()));
+    let ctx = WhisperContext::new_with_params(&model, WhisperContextParameters::default())
+        .map_err(|e| anyhow!("load whisper model: {e}"))?;
+    let _ = CTX.set(ctx);
+    Ok(CTX.get().expect("whisper context just set"))
+}
 
 #[derive(Debug, Clone)]
 pub struct Word {
@@ -105,20 +173,20 @@ pub fn model_path() -> Result<PathBuf> {
 
 /// Word-level transcription of `media_path` (absolute times in seconds).
 pub fn transcribe(media_path: &Path, language: Option<&str>) -> Result<Vec<Word>> {
-    use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
+    use whisper_rs::{FullParams, SamplingStrategy};
 
     let audio = media::decode_mono(media_path)
         .with_context(|| format!("decode audio {}", media_path.display()))?;
-    let model = model_path()?;
+
+    // Only a bounded number of runs may hold the model at once.
+    let _permit = whisper_sem().acquire();
+    let ctx = shared_ctx()?;
     log(format!(
-        "loading whisper model {} ({} samples @ {} Hz)",
-        model.display(),
+        "transcribing {} ({} samples @ {} Hz)",
+        media_path.display(),
         audio.len(),
         media::SAMPLE_RATE
     ));
-
-    let ctx = WhisperContext::new_with_params(&model, WhisperContextParameters::default())
-        .map_err(|e| anyhow!("load whisper model: {e}"))?;
     let mut state = ctx.create_state().map_err(|e| anyhow!("whisper state: {e}"))?;
 
     let mut params = FullParams::new(SamplingStrategy::BeamSearch {
