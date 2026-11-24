@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ЧИК / CHIK ✂️ — Автопилот вирусных нарезок</title>
   
-  <!-- Distinctive Typography: Syne (Brutalist Editorial) + Space Mono (Precision Telemetry) + Plus Jakarta Sans -->
+  <!-- Distinctive Typography: Syne (Brutalist Industrial) + Space Mono (Hardware Telemetry) + Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
@@ -18,18 +18,18 @@
         extend: {
           colors: {
             chik: {
-              black: '#060709',
-              dark: '#0B0D12',
-              surface: '#111319',
-              card: '#161922',
-              border: '#232735',
-              borderLight: '#32374A',
-              volt: '#DFFF00',       // Electric Laser Lime
-              voltHover: '#EBFF4D',
-              coral: '#FF3856',      // REC Flame
-              cyan: '#00F0FF',
+              black: '#090A0D',          // Deep Matte Basalt
+              dark: '#101217',           // Gunmetal Dark
+              surface: '#151820',        // Machined Surface
+              card: '#1C202B',           // Pocket Operator Component
+              border: '#2A3040',         // Precision Hairline
+              borderLight: '#3D455C',    // Active Boundary
+              orange: '#FF5500',         // Teenage Engineering Safety Orange
+              orangeHover: '#FF6E26',
+              coral: '#FF3856',          // REC Indicator
+              white: '#F5F6F8',
               text: '#EDEDED',
-              muted: '#767E94'
+              muted: '#8A92A6'
             }
           },
           fontFamily: {
@@ -43,20 +43,20 @@
   </script>
   
   <style>
-    /* Precision Viewfinder & Technical Grid Aesthetics */
+    /* Teenage Engineering / Industrial Hardware Aesthetics */
     :root {
-      --bg: #060709;
-      --volt: #DFFF00;
+      --bg: #090A0D;
+      --orange: #FF5500;
     }
     
     body {
       background-color: var(--bg);
       color: #EDEDED;
       background-image: 
-        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        radial-gradient(at 0% 0%, rgba(223, 255, 0, 0.035) 0px, transparent 40%),
-        radial-gradient(at 100% 100%, rgba(0, 240, 255, 0.03) 0px, transparent 45%);
-      background-size: 28px 28px, 100% 100%, 100% 100%;
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        radial-gradient(at 0% 0%, rgba(255, 85, 0, 0.05) 0px, transparent 45%),
+        radial-gradient(at 100% 100%, rgba(255, 85, 0, 0.02) 0px, transparent 50%);
+      background-size: 26px 26px, 100% 100%, 100% 100%;
     }
 
     /* Crosshair Crop Markers */
@@ -68,22 +68,22 @@
       position: absolute;
       font-family: 'Space Mono', monospace;
       font-size: 11px;
-      color: rgba(223, 255, 0, 0.4);
+      color: rgba(255, 85, 0, 0.6);
       pointer-events: none;
       line-height: 1;
     }
     .crosshair-box::before { top: -6px; left: -5px; }
     .crosshair-box::after { bottom: -6px; right: -5px; }
 
-    /* Laser Volt Glows */
-    .glow-laser {
-      box-shadow: 0 0 35px -8px rgba(223, 255, 0, 0.45);
+    /* Industrial Safety Orange Glows */
+    .glow-orange {
+      box-shadow: 0 0 35px -8px rgba(255, 85, 0, 0.5);
     }
-    .glow-laser-sm {
-      box-shadow: 0 0 15px -3px rgba(223, 255, 0, 0.35);
+    .glow-orange-sm {
+      box-shadow: 0 0 16px -3px rgba(255, 85, 0, 0.35);
     }
 
-    /* 9:16 Frame Aspect */
+    /* 9:16 Aspect */
     .aspect-reel {
       aspect-ratio: 9 / 16;
     }
@@ -97,13 +97,7 @@
       animation: snip 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    /* Scanline overlay (optional cinematic feel) */
-    .scanlines {
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-      background-size: 100% 3px, 6px 100%;
-    }
-
-    /* Audio visualizer bar animation */
+    /* Hardware Equalizer Bars */
     @keyframes eq {
       0%, 100% { height: 15%; }
       50% { height: 95%; }
@@ -115,13 +109,13 @@
     .eq-bar:nth-child(5) { animation: eq 0.7s infinite ease-in-out 0.3s; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-chik-volt selection:text-black antialiased">
+<body class="min-h-screen flex flex-col font-sans selection:bg-chik-orange selection:text-white antialiased">
 
   <!-- TOP TELEMETRY RIBBON -->
-  <aside class="border-b border-chik-border bg-chik-dark/90 backdrop-blur-md px-4 py-1.5 text-[10px] font-mono text-chik-muted flex items-center justify-between overflow-x-auto whitespace-nowrap">
+  <aside class="border-b border-chik-border bg-chik-dark/95 backdrop-blur-md px-4 py-1.5 text-[10px] font-mono text-chik-muted flex items-center justify-between overflow-x-auto whitespace-nowrap">
     <div class="flex items-center space-x-4">
-      <span class="flex items-center space-x-1.5 text-chik-volt">
-        <span class="w-1.5 h-1.5 rounded-full bg-chik-volt animate-ping"></span>
+      <span class="flex items-center space-x-1.5 text-chik-orange">
+        <span class="w-1.5 h-1.5 rounded-full bg-chik-orange animate-ping"></span>
         <span class="font-bold tracking-widest">CHIK//SYS.ONLINE</span>
       </span>
       <span class="hidden sm:inline-block text-zinc-600">|</span>
@@ -137,26 +131,26 @@
   </aside>
 
   <!-- NAVBAR -->
-  <header class="border-b border-chik-border/80 bg-chik-black/90 backdrop-blur-lg sticky top-0 z-40">
+  <header class="border-b border-chik-border bg-chik-black/95 backdrop-blur-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
       
-      <!-- Brand Logo: CHIK / ЧИК with animated scissor -->
+      <!-- Brand Logo: CHIK / ЧИК in Safety Orange -->
       <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('studio')">
-        <div class="relative w-11 h-11 bg-chik-volt text-black flex items-center justify-center font-mono font-black text-2xl rounded-none border border-chik-volt shadow-lg glow-laser-sm transition duration-300 group-hover:bg-white" id="scissor-icon">
+        <div class="relative w-11 h-11 bg-chik-orange text-white flex items-center justify-center font-mono font-black text-2xl border border-chik-orange shadow-lg glow-orange-sm transition duration-300 group-hover:bg-white group-hover:text-black" id="scissor-icon">
           ✂
         </div>
         <div>
           <div class="flex items-baseline space-x-2">
-            <span class="font-display font-black text-3xl tracking-tight text-white uppercase group-hover:text-chik-volt transition">ЧИК</span>
-            <span class="font-mono text-xs font-bold text-chik-volt tracking-widest">[CHIK]</span>
+            <span class="font-display font-black text-3xl tracking-tight text-white uppercase group-hover:text-chik-orange transition">ЧИК</span>
+            <span class="font-mono text-xs font-bold text-chik-orange tracking-widest">[CHIK]</span>
           </div>
           <p class="font-mono text-[9px] text-chik-muted uppercase tracking-wider -mt-1">автопилот вирусных нарезок</p>
         </div>
       </div>
 
-      <!-- Center Minimalist Navigation -->
-      <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/60 p-1 font-mono text-xs">
-        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-black bg-chik-volt font-bold uppercase tracking-wider transition">
+      <!-- Center Industrial Navigation -->
+      <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/80 p-1 font-mono text-xs">
+        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition">
           [01] Нарезка
         </button>
         <button onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
@@ -170,10 +164,10 @@
       <!-- User Deck / Credits / Auth -->
       <div class="flex items-center space-x-3">
         <div id="user-balance-box" class="hidden flex items-center space-x-2.5 bg-chik-surface border border-chik-border px-3.5 py-2 font-mono">
-          <span class="text-chik-volt text-xs">⚡</span>
+          <span class="text-chik-orange text-xs">⚡</span>
           <span id="user-credits" class="font-bold text-sm text-white">0</span>
           <span class="text-[10px] uppercase tracking-wider text-chik-muted">клипов</span>
-          <button onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-volt text-black px-2 py-0.5 hover:bg-white transition ml-1">
+          <button onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-orange text-white px-2 py-0.5 hover:bg-chik-orangeHover transition ml-1">
             +БАЛАНС
           </button>
         </div>
@@ -182,7 +176,7 @@
           <button onclick="openAuthModal('login')" class="font-mono text-xs uppercase tracking-wider text-zinc-400 hover:text-white px-3 py-2 transition">
             Вход
           </button>
-          <button onclick="openAuthModal('register')" class="font-mono text-xs uppercase font-bold tracking-wider text-black bg-chik-volt hover:bg-chik-voltHover px-4 py-2 border border-chik-volt shadow-lg glow-laser-sm transition">
+          <button onclick="openAuthModal('register')" class="font-mono text-xs uppercase font-bold tracking-wider text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange shadow-lg glow-orange-sm transition">
             Старт (5 FREE)
           </button>
         </div>
@@ -205,15 +199,15 @@
     <section id="view-studio" class="space-y-12">
       
       <!-- HERO: Bold Typography with Asymmetric Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end pt-4 pb-2 border-b border-chik-border/40 pb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end pt-4 pb-2 border-b border-chik-border/60 pb-8">
         <div class="lg:col-span-8 space-y-4">
-          <div class="inline-flex items-center space-x-2 font-mono text-[11px] text-chik-volt uppercase tracking-widest border border-chik-volt/30 px-3 py-1 bg-chik-volt/5">
-            <span class="w-2 h-2 bg-chik-volt inline-block"></span>
+          <div class="inline-flex items-center space-x-2 font-mono text-[11px] text-chik-orange uppercase tracking-widest border border-chik-orange/40 px-3 py-1 bg-chik-orange/10">
+            <span class="w-2 h-2 bg-chik-orange inline-block"></span>
             <span>NO-TIMELINE // AUTONOMOUS HIGHLIGHT EXTRACTION</span>
           </div>
           <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.95]">
             ИЗ СТРИМА — В ШОРТС <br>
-            <span class="text-chik-volt">ЧЕРЕЗ 2 МИНУТЫ.</span> <br>
+            <span class="text-chik-orange">ЧЕРЕЗ 2 МИНУТЫ.</span> <br>
             <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖКИ.</span>
           </h1>
         </div>
@@ -233,14 +227,14 @@
       <div class="crosshair-box border border-chik-border bg-chik-surface p-6 sm:p-10 shadow-2xl relative">
         <div class="flex items-center justify-between border-b border-chik-border pb-4 mb-8 font-mono text-xs">
           <div class="flex items-center space-x-2 text-zinc-400">
-            <span class="w-2 h-2 bg-chik-coral rounded-full animate-pulse"></span>
+            <span class="w-2 h-2 bg-chik-orange rounded-full animate-pulse"></span>
             <span class="font-bold text-white uppercase tracking-wider">CUTTER CONSOLE v0.2</span>
           </div>
           <div class="flex items-center space-x-3 text-[11px] text-chik-muted">
-            <button type="button" onclick="insertDemoUrl('twitch')" class="hover:text-chik-volt transition underline">
+            <button type="button" onclick="insertDemoUrl('twitch')" class="hover:text-chik-orange transition underline">
               [ДЕМО TWITCH]
             </button>
-            <button type="button" onclick="insertDemoUrl('youtube')" class="hover:text-chik-volt transition underline">
+            <button type="button" onclick="insertDemoUrl('youtube')" class="hover:text-chik-orange transition underline">
               [ДЕМО YOUTUBE]
             </button>
           </div>
@@ -255,7 +249,7 @@
                 <span>[01] ИСТОЧНИК СТРИМА</span>
                 <span class="text-chik-muted font-normal">(VOD или ссылка на канал)</span>
               </label>
-              <span id="detected-platform" class="text-chik-volt text-[11px] font-bold"></span>
+              <span id="detected-platform" class="text-chik-orange text-[11px] font-bold"></span>
             </div>
             
             <div class="relative flex items-center">
@@ -265,7 +259,7 @@
                 required
                 oninput="detectPlatform(this.value)"
                 placeholder="Вставь ссылку: https://twitch.tv/streamer или https://youtu.be/..." 
-                class="w-full bg-chik-black border border-chik-borderLight focus:border-chik-volt text-white font-mono text-sm sm:text-base px-5 py-4 focus:outline-none transition placeholder:text-zinc-600"
+                class="w-full bg-chik-black border border-chik-borderLight focus:border-chik-orange text-white font-mono text-sm sm:text-base px-5 py-4 focus:outline-none transition placeholder:text-zinc-600"
               >
             </div>
           </div>
@@ -278,7 +272,7 @@
               <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [02] РЕЖИМ РАБОТЫ
               </label>
-              <select id="job-mode" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+              <select id="job-mode" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="auto">⚡ АВТО-ХАЙП (Лучшие моменты VOD)</option>
                 <option value="live">🔴 LIVE-МОНИТОР (Ждать хайп в эфире)</option>
               </select>
@@ -290,7 +284,7 @@
               <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [03] ПАКЕТ КЛИПОВ
               </label>
-              <select id="job-count" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+              <select id="job-count" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="1">1 ТОПОВЫЙ КЛИП</option>
                 <option value="3" selected>3 САМЫХ СОЧНЫХ КЛИПА</option>
                 <option value="5">5 ВИРУСНЫХ КЛИПОВ</option>
@@ -303,7 +297,7 @@
               <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [04] НИЖНИЙ ГЕЙМПЛЕЙ (9:16)
               </label>
-              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-volt">
+              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="subway">SUBWAY SURFERS (Классика)</option>
                 <option value="minecraft">MINECRAFT PARKOUR</option>
                 <option value="gta">GTA V MEGA-RAMP</option>
@@ -315,13 +309,13 @@
 
           </div>
 
-          <!-- Launch Button: Big, Tactile, Industrial -->
+          <!-- Launch Button: Big, Tactile, Industrial Safety Orange -->
           <div class="pt-4">
             <button 
               type="submit" 
               id="btn-submit-job"
               onmousedown="playClickSound()"
-              class="w-full bg-chik-volt hover:bg-chik-voltHover text-black font-display font-black text-xl sm:text-2xl uppercase tracking-wider py-5 border border-chik-volt transition duration-200 shadow-xl glow-laser flex items-center justify-center space-x-3 group"
+              class="w-full bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-xl sm:text-2xl uppercase tracking-wider py-5 border border-chik-orange transition duration-200 shadow-xl glow-orange flex items-center justify-center space-x-3 group"
             >
               <span>ЧИКНУТЬ СТРИМ</span>
               <span class="text-2xl transform group-hover:rotate-45 transition duration-300">✂</span>
@@ -332,15 +326,15 @@
       </div>
 
       <!-- LIVE PROGRESS TELEMETRY WIDGET -->
-      <div id="active-job-card" class="hidden crosshair-box border border-chik-volt/60 bg-chik-surface p-6 shadow-2xl space-y-5">
+      <div id="active-job-card" class="hidden crosshair-box border border-chik-orange/60 bg-chik-surface p-6 shadow-2xl space-y-5">
         <div class="flex items-center justify-between border-b border-chik-border pb-3 font-mono">
           <div class="flex items-center space-x-3">
             <div class="flex items-end space-x-1 h-4">
-              <div class="w-1 bg-chik-volt eq-bar"></div>
-              <div class="w-1 bg-chik-volt eq-bar"></div>
-              <div class="w-1 bg-chik-volt eq-bar"></div>
-              <div class="w-1 bg-chik-volt eq-bar"></div>
-              <div class="w-1 bg-chik-volt eq-bar"></div>
+              <div class="w-1 bg-chik-orange eq-bar"></div>
+              <div class="w-1 bg-chik-orange eq-bar"></div>
+              <div class="w-1 bg-chik-orange eq-bar"></div>
+              <div class="w-1 bg-chik-orange eq-bar"></div>
+              <div class="w-1 bg-chik-orange eq-bar"></div>
             </div>
             <div>
               <h3 class="font-bold text-sm text-white uppercase" id="active-job-title">Обработка стрима...</h3>
@@ -348,41 +342,41 @@
             </div>
           </div>
           <div class="text-right">
-            <span id="active-job-percent" class="font-mono text-2xl font-black text-chik-volt">0%</span>
+            <span id="active-job-percent" class="font-mono text-2xl font-black text-chik-orange">0%</span>
           </div>
         </div>
 
         <!-- Stepped Precision Progress Bar -->
         <div class="w-full bg-chik-black border border-chik-border h-3 overflow-hidden p-0.5">
-          <div id="active-progress-bar" class="bg-chik-volt h-full transition-all duration-300" style="width: 5%"></div>
+          <div id="active-progress-bar" class="bg-chik-orange h-full transition-all duration-300" style="width: 5%"></div>
         </div>
 
         <div class="flex items-center justify-between font-mono text-xs text-chik-muted">
           <span id="active-job-stage" class="text-white">Инициализация конвейера...</span>
-          <span class="text-chik-volt font-bold">[REALTIME TELEMETRY]</span>
+          <span class="text-chik-orange font-bold">[REALTIME TELEMETRY]</span>
         </div>
       </div>
 
       <!-- BRAND PRINCIPLES / FEATURES -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
-          <div class="font-mono text-chik-volt text-xs font-bold">[01 // АУДИО-АНАЛИЗАТОР]</div>
+        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
+          <div class="font-mono text-chik-orange text-xs font-bold">[01 // АУДИО-АНАЛИЗАТОР]</div>
           <h4 class="font-display font-extrabold text-lg text-white uppercase">Ловит настоящий крик и смех</h4>
           <p class="font-mono text-xs text-chik-muted leading-relaxed">
             Адаптивная формула MAD отделяет фоновый шум игры от искренней человеческой реакции. Никаких унылых разговорных пауз.
           </p>
         </div>
 
-        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
-          <div class="font-mono text-chik-volt text-xs font-bold">[02 // TWITCH ЧАТ-СКОР]</div>
+        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
+          <div class="font-mono text-chik-orange text-xs font-bold">[02 // TWITCH ЧАТ-СКОР]</div>
           <h4 class="font-display font-extrabold text-lg text-white uppercase">Всплески KEKW и PogChamp</h4>
           <p class="font-mono text-xs text-chik-muted leading-relaxed">
             Чат взвешивается по эмоциям: 10 сообщений с KEKW важнее сотни обычных реплик. Момент утверждается только при консенсусе.
           </p>
         </div>
 
-        <div class="border border-chik-border bg-chik-surface/50 p-6 space-y-3">
-          <div class="font-mono text-chik-volt text-xs font-bold">[03 // СУБТИТРЫ КАРАОКЕ]</div>
+        <div class="border border-chik-border bg-chik-surface/60 p-6 space-y-3">
+          <div class="font-mono text-chik-orange text-xs font-bold">[03 // СУБТИТРЫ КАРАОКЕ]</div>
           <h4 class="font-display font-extrabold text-lg text-white uppercase">Каждое слово в такт</h4>
           <p class="font-mono text-xs text-chik-muted leading-relaxed">
             Локальная нейросеть Whisper генерирует субтитры с посекундной подсветкой слов. Зритель задерживается на ролике на 70% дольше.
@@ -399,7 +393,7 @@
           <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">ВИДЕО-ОБОЙМА</h2>
           <p class="font-mono text-xs text-chik-muted uppercase">ГОТОВЫЕ ВЕРТИКАЛЬНЫЕ РИЛСЫ 9:16 ДЛЯ TIKTOK / SHORTS</p>
         </div>
-        <button onclick="loadReels()" class="font-mono text-xs uppercase font-bold text-black bg-chik-volt hover:bg-white px-4 py-2 border border-chik-volt transition">
+        <button onclick="loadReels()" class="font-mono text-xs uppercase font-bold text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange transition">
           ОБНОВИТЬ СПИСОК
         </button>
       </div>
@@ -416,7 +410,7 @@
         <p class="font-mono text-xs text-chik-muted max-w-sm mx-auto">
           Вставь ссылку на стрим на главном пульте, и автопилот нарежет первые ролики.
         </p>
-        <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold bg-chik-volt text-black px-6 py-3 border border-chik-volt hover:bg-white transition">
+        <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold bg-chik-orange text-white px-6 py-3 border border-chik-orange hover:bg-chik-orangeHover transition">
           НАРЕЗАТЬ СТРИМ СЕЙЧАС
         </button>
       </div>
@@ -425,7 +419,7 @@
     <!-- VIEW 3: PRICING -->
     <section id="view-pricing" class="hidden space-y-10 max-w-5xl mx-auto py-6">
       <div class="text-center space-y-3">
-        <div class="inline-block font-mono text-xs text-chik-volt uppercase tracking-widest">[ PAY-AS-YOU-GO ]</div>
+        <div class="inline-block font-mono text-xs text-chik-orange uppercase tracking-widest">[ PAY-AS-YOU-GO ]</div>
         <h2 class="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
           ЧЕСТНАЯ ОПЛАТА ЗА КЛИПЫ
         </h2>
@@ -465,7 +459,7 @@
       <div class="p-6 md:w-1/2 flex flex-col justify-between space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-chik-border">
         <div class="space-y-4">
           <div class="flex items-center justify-between border-b border-chik-border pb-3">
-            <span class="font-mono text-xs font-bold px-2 py-0.5 bg-chik-volt text-black uppercase" id="modal-hype-score">
+            <span class="font-mono text-xs font-bold px-2 py-0.5 bg-chik-orange text-white uppercase" id="modal-hype-score">
               🔥 ХАЙП: 95%
             </span>
             <button onclick="closePlayerModal()" class="font-mono text-sm text-zinc-400 hover:text-white px-2 py-1 border border-chik-border hover:border-white transition">
@@ -485,16 +479,16 @@
 
           <div>
             <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ХЕШТЕГИ</label>
-            <div id="modal-tags" class="font-mono text-xs text-chik-volt font-bold"></div>
+            <div id="modal-tags" class="font-mono text-xs text-chik-orange font-bold"></div>
           </div>
         </div>
 
         <!-- Actions -->
         <div class="space-y-2 pt-4 border-t border-chik-border">
-          <button onclick="copyModalCaptions()" class="w-full font-mono text-xs uppercase font-bold py-3 bg-chik-card border border-chik-border hover:border-chik-volt text-white transition flex items-center justify-center space-x-2">
+          <button onclick="copyModalCaptions()" class="w-full font-mono text-xs uppercase font-bold py-3 bg-chik-card border border-chik-border hover:border-chik-orange text-white transition flex items-center justify-center space-x-2">
             <span>📋 СКОПИРОВАТЬ ТЕКСТ + ХЕШТЕГИ</span>
           </button>
-          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full font-mono text-xs uppercase font-black py-3.5 bg-chik-volt text-black border border-chik-volt hover:bg-white transition glow-laser-sm flex items-center justify-center space-x-2">
+          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full font-mono text-xs uppercase font-black py-3.5 bg-chik-orange text-white border border-chik-orange hover:bg-chik-orangeHover transition glow-orange-sm flex items-center justify-center space-x-2">
             <span>⬇ СКАЧАТЬ ЧИСТЫЙ FULL HD</span>
           </button>
         </div>
@@ -509,29 +503,29 @@
       <button onclick="closeAuthModal()" class="absolute right-4 top-4 font-mono text-xs text-zinc-400 hover:text-white">[✕]</button>
 
       <div class="space-y-1">
-        <div class="font-mono text-xs text-chik-volt uppercase font-bold">[ АВТОРИЗАЦИЯ ]</div>
+        <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ АВТОРИЗАЦИЯ ]</div>
         <h3 id="auth-modal-title" class="font-display font-black text-2xl uppercase text-white">ВХОД В ЧИК</h3>
         <p class="font-mono text-xs text-chik-muted" id="auth-modal-subtitle">Автопилот вирусных нарезок</p>
       </div>
 
       <div class="flex border-b border-chik-border font-mono text-xs">
-        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition">ВХОД</button>
+        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition">ВХОД</button>
         <button id="tab-register" onclick="setAuthTab('register')" class="flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition">РЕГИСТРАЦИЯ (+5 КЛИПОВ)</button>
       </div>
 
       <form onsubmit="handleAuthSubmit(event)" class="space-y-4 font-mono">
         <div>
           <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">EMAIL</label>
-          <input type="email" id="auth-email" required placeholder="streamer@twitch.tv" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-volt">
+          <input type="email" id="auth-email" required placeholder="streamer@twitch.tv" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
         </div>
         <div>
           <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ПАРОЛЬ</label>
-          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-volt">
+          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
         </div>
 
         <div id="auth-error" class="hidden text-xs text-chik-coral bg-red-950/30 border border-chik-coral/40 p-2 font-mono"></div>
 
-        <button type="submit" id="auth-submit-btn" class="w-full bg-chik-volt hover:bg-white text-black font-black py-3 text-xs uppercase tracking-wider transition glow-laser-sm">
+        <button type="submit" id="auth-submit-btn" class="w-full bg-chik-orange hover:bg-chik-orangeHover text-white font-black py-3 text-xs uppercase tracking-wider transition glow-orange-sm">
           ВОЙТИ В СИСТЕМУ
         </button>
       </form>
@@ -554,9 +548,9 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -596,7 +590,7 @@
         const nav = document.getElementById('nav-' + v);
         if (v === viewName) {
           el.classList.remove('hidden');
-          if (nav) nav.className = "px-4 py-2 text-black bg-chik-volt font-bold uppercase tracking-wider transition";
+          if (nav) nav.className = "px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition";
         } else {
           el.classList.add('hidden');
           if (nav) nav.className = "px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition";
@@ -690,12 +684,12 @@
       const btn = document.getElementById('auth-submit-btn');
 
       if (mode === 'login') {
-        tabLogin.className = "flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition";
+        tabLogin.className = "flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition";
         tabReg.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
         title.innerText = "ВХОД В ЧИК";
         btn.innerText = "ВОЙТИ В СИСТЕМУ";
       } else {
-        tabReg.className = "flex-1 pb-3 text-chik-volt border-b-2 border-chik-volt font-bold uppercase transition";
+        tabReg.className = "flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition";
         tabLogin.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
         title.innerText = "РЕГИСТРАЦИЯ СТРИМЕРА";
         btn.innerText = "СОЗДАТЬ АККАУНТ (+5 КЛИПОВ)";
@@ -811,20 +805,20 @@
 
         reels.forEach(r => {
           const card = document.createElement('div');
-          card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-volt transition duration-200 flex flex-col group cursor-pointer shadow-xl";
+          card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-orange transition duration-200 flex flex-col group cursor-pointer shadow-xl";
           card.onclick = () => openPlayerModal(r);
           card.innerHTML = `
             <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
               <video src="/api/reels/${r.id}/video#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
               <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-              <div class="absolute top-2.5 right-2.5 bg-chik-black/90 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-volt border border-chik-volt/40">
+              <div class="absolute top-2.5 right-2.5 bg-chik-black/95 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-orange border border-chik-orange/40">
                 🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
               </div>
               <div class="absolute bottom-3 left-3 right-3 space-y-1">
                 <h4 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h4>
                 <p class="font-mono text-[10px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</p>
               </div>
-              <div class="w-11 h-11 bg-chik-volt text-black flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-laser-sm">
+              <div class="w-11 h-11 bg-chik-orange text-white flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-orange-sm">
                 ▶
               </div>
             </div>
@@ -832,7 +826,7 @@
               <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-500'}">
                 ${r.is_unlocked ? '✅ ГОТОВ' : '🔒 1 КРЕДИТ'}
               </span>
-              <span class="text-chik-volt font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
+              <span class="text-chik-orange font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
             </div>
           `;
           container.appendChild(card);
@@ -931,11 +925,11 @@
 
         packs.forEach(p => {
           const card = document.createElement('div');
-          card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-volt glow-laser' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
+          card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-orange glow-orange' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
           card.innerHTML = `
-            ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-volt text-black font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
+            ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-orange text-white font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
             <div class="space-y-4">
-              <div class="font-mono text-xs text-chik-volt uppercase font-bold">[ ПАКЕТ ]</div>
+              <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ ПАКЕТ ]</div>
               <h3 class="font-display font-black text-2xl uppercase text-white">${p.name}</h3>
               <p class="font-mono text-xs text-chik-muted leading-relaxed">${p.description}</p>
               <div class="pt-3 border-t border-chik-border">
@@ -943,7 +937,7 @@
                 <span class="font-mono text-xs text-zinc-500 ml-1">/ ${p.credits} КЛИПОВ</span>
               </div>
             </div>
-            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-volt text-black hover:bg-white' : 'bg-chik-card text-white hover:border-chik-volt border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
+            <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-orange text-white hover:bg-chik-orangeHover' : 'bg-chik-card text-white hover:border-chik-orange border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
               АКТИВИРОВАТЬ ПАКЕТ
             </button>
           `;
