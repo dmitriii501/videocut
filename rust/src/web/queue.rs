@@ -8,8 +8,8 @@ use chrono::Utc;
 use tokio::sync::{broadcast, mpsc};
 
 use crate::config;
-use crate::live_pipeline::{self, LiveJob};
-use crate::pipeline::{self, ReelJob};
+use crate::livestream::live_pipeline::{self, LiveJob};
+use crate::vod::pipeline::{self, ReelJob};
 use crate::utils::{duration, log};
 use crate::web::db::Database;
 use crate::web::models::{Job, Reel, WebEvent};

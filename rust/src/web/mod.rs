@@ -2,13 +2,12 @@ pub mod db;
 pub mod models;
 pub mod queue;
 pub mod routes;
+pub mod tbank;
 pub mod ui;
 
 use std::net::SocketAddr;
 
 use anyhow::{Context, Result};
-use axum::routing::{get, post};
-use axum::Router;
 use tower_http::cors::CorsLayer;
 
 use crate::config;
@@ -51,26 +50,7 @@ pub fn run(bind_addr: String, port: u16) -> Result<i32> {
             queue,
         };
 
-        let app = Router::new()
-            .route("/", get(ui::index))
-            .route("/studio", get(ui::index))
-            .route("/app", get(ui::index))
-            .route("/reels", get(ui::index))
-            .route("/pricing", get(ui::index))
-            .route("/api/auth/register", post(routes::auth::register))
-            .route("/api/auth/login", post(routes::auth::login))
-            .route("/api/auth/me", get(routes::auth::me))
-            .route("/api/auth/logout", post(routes::auth::logout))
-            .route("/api/jobs", post(routes::jobs::create_job).get(routes::jobs::list_jobs))
-            .route("/api/jobs/{id}", get(routes::jobs::get_job))
-            .route("/api/jobs/{id}/stop", post(routes::jobs::stop_job))
-            .route("/api/reels", get(routes::reels::list_reels))
-            .route("/api/reels/{id}", get(routes::reels::get_reel))
-            .route("/api/reels/{id}/video", get(routes::reels::stream_video))
-            .route("/api/reels/unlock", post(routes::reels::unlock_reel))
-            .route("/api/billing/packages", get(routes::billing::list_packages))
-            .route("/api/billing/topup", post(routes::billing::topup))
-            .route("/api/ws", get(routes::ws::ws_handler))
+        let app = routes::router()
             .layer(CorsLayer::permissive())
             .with_state(state);
 

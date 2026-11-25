@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Result};
 use rusqlite::{params, Connection};
 
-use crate::web::models::{Job, Reel, User};
+use crate::web::models::{Job, Order, Reel, User};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -77,6 +77,23 @@ impl Database {
             CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON jobs(user_id);
             CREATE INDEX IF NOT EXISTS idx_reels_job_id ON reels(job_id);
             CREATE INDEX IF NOT EXISTS idx_reels_user_id ON reels(user_id);
+
+            CREATE TABLE IF NOT EXISTS orders (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                package_id TEXT NOT NULL,
+                credits INTEGER NOT NULL,
+                amount_kopecks INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                tbank_payment_id TEXT,
+                payment_url TEXT,
+                created_at TEXT NOT NULL,
+                paid_at TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tbank_payment_id
+                ON orders(tbank_payment_id) WHERE tbank_payment_id IS NOT NULL;
             "#
         )?;
         Ok(())
@@ -438,5 +455,130 @@ impl Database {
             params![reel_id, user_id],
         )?;
         Ok(affected > 0)
+    }
+
+    // --- Orders (payments) ---
+
+    pub fn create_order(&self, order: &Order) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            r#"
+            INSERT INTO orders (
+                id, user_id, package_id, credits, amount_kopecks,
+                status, tbank_payment_id, payment_url, created_at, paid_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            "#,
+            params![
+                order.id,
+                order.user_id,
+                order.package_id,
+                order.credits,
+                order.amount_kopecks,
+                order.status,
+                order.tbank_payment_id,
+                order.payment_url,
+                order.created_at,
+                order.paid_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    fn order_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Order> {
+        Ok(Order {
+            id: row.get(0)?,
+            user_id: row.get(1)?,
+            package_id: row.get(2)?,
+            credits: row.get(3)?,
+            amount_kopecks: row.get(4)?,
+            status: row.get(5)?,
+            tbank_payment_id: row.get(6)?,
+            payment_url: row.get(7)?,
+            created_at: row.get(8)?,
+            paid_at: row.get(9)?,
+        })
+    }
+
+    const ORDER_COLUMNS: &'static str = "id, user_id, package_id, credits, amount_kopecks, \
+        status, tbank_payment_id, payment_url, created_at, paid_at";
+
+    pub fn get_order(&self, order_id: &str) -> Result<Option<Order>> {
+        let conn = self.conn.lock().unwrap();
+        let sql = format!("SELECT {} FROM orders WHERE id = ?1", Self::ORDER_COLUMNS);
+        let mut stmt = conn.prepare(&sql)?;
+        let mut rows = stmt.query(params![order_id])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(Self::order_from_row(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Persist the acquirer's payment id / pay URL after Init.
+    pub fn set_order_payment(
+        &self,
+        order_id: &str,
+        payment_id: &str,
+        payment_url: &str,
+    ) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE orders SET tbank_payment_id = ?1, payment_url = ?2 WHERE id = ?3",
+            params![payment_id, payment_url, order_id],
+        )?;
+        Ok(())
+    }
+
+    /// Idempotently mark an order paid and credit the user exactly once.
+    ///
+    /// The status flip is guarded by `status = 'pending'` inside a single
+    /// transaction, so a duplicated webhook cannot double-credit. Returns
+    /// `(new_balance, credited_now)`.
+    pub fn fulfill_order(&self, order_id: &str, paid_at: &str) -> Result<(i64, bool)> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+
+        let (user_id, credits): (String, i64) = {
+            let mut stmt = tx.prepare("SELECT user_id, credits FROM orders WHERE id = ?1")?;
+            stmt.query_row(params![order_id], |r| Ok((r.get(0)?, r.get(1)?)))?
+        };
+
+        let flipped = tx.execute(
+            "UPDATE orders SET status = 'paid', paid_at = ?1 \
+             WHERE id = ?2 AND status = 'pending'",
+            params![paid_at, order_id],
+        )?;
+
+        if flipped == 0 {
+            // Already paid (or unknown state) — do not credit again.
+            let balance: i64 = tx.query_row(
+                "SELECT credits FROM users WHERE id = ?1",
+                params![user_id],
+                |r| r.get(0),
+            )?;
+            tx.commit()?;
+            return Ok((balance, false));
+        }
+
+        tx.execute(
+            "UPDATE users SET credits = credits + ?1 WHERE id = ?2",
+            params![credits, user_id],
+        )?;
+        let balance: i64 = tx.query_row(
+            "SELECT credits FROM users WHERE id = ?1",
+            params![user_id],
+            |r| r.get(0),
+        )?;
+        tx.commit()?;
+        Ok((balance, true))
+    }
+
+    pub fn set_order_status(&self, order_id: &str, status: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE orders SET status = ?1 WHERE id = ?2 AND status = 'pending'",
+            params![status, order_id],
+        )?;
+        Ok(())
     }
 }

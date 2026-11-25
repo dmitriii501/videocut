@@ -15,7 +15,7 @@ use serde_json::Value;
 
 use crate::config;
 use crate::http;
-use crate::subtitles::Word;
+use crate::text::subtitles::Word;
 use crate::utils::{log, retry};
 
 /// MyMemory wants a plain ISO code; these are the ones we expect to use.

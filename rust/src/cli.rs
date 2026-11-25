@@ -207,12 +207,55 @@ impl Cli {
         }
     }
 
+    /// True when a source of any kind (URL, local file, or live stream) was given.
+    fn has_source(&self) -> bool {
+        self.url.is_some() || self.local.is_some() || self.live.is_some()
+    }
+
+    /// True when the run should start the web platform instead of cutting.
+    fn is_web_mode(&self) -> bool {
+        self.web || (!self.has_source() && !self.bot)
+    }
+
+    /// The live stream URL, if live mode was requested.
+    fn live_url(&self) -> Option<&str> {
+        self.live.as_deref()
+    }
+
+    /// The raw `-s/--segment` specs.
+    fn segment_specs(&self) -> &[String] {
+        &self.segment
+    }
+
+    /// True when at least one segment was passed.
+    fn has_segments(&self) -> bool {
+        !self.segment.is_empty()
+    }
+
+    /// The resolved source: the URL, else the local path as a string.
+    fn source(&self) -> String {
+        self.url
+            .clone()
+            .or_else(|| self.local.as_ref().map(|p| p.display().to_string()))
+            .unwrap_or_default()
+    }
+
+    /// The local file to use instead of downloading, if any.
+    fn local_source(&self) -> Option<PathBuf> {
+        self.local.clone()
+    }
+
+    /// The channel label used for output names (empty when local-only).
+    fn channel(&self) -> String {
+        self.url.clone().unwrap_or_default()
+    }
+
     fn webcam_spec(&self) -> Option<String> {
         if self.webcam.is_some() {
             return self.webcam.clone();
         }
         if self.no_webcam_detect {
-            let (a, b, c, d) = crate::webcam::DEFAULT_PANEL;
+            let (a, b, c, d) = crate::vod::webcam::DEFAULT_PANEL;
             return Some(format!("{a:.3},{b:.3},{c:.3},{d:.3}"));
         }
         None
@@ -249,7 +292,7 @@ fn banner_flag(cli: &Cli) -> bool {
 fn run(cli: Cli) -> Result<i32> {
     let webcam_spec = cli.webcam_spec();
 
-    if cli.web || (cli.url.is_none() && cli.local.is_none() && cli.live.is_none() && !cli.bot) {
+    if cli.is_web_mode() {
         return crate::web::run(cli.web_bind, cli.web_port);
     }
 
@@ -258,10 +301,10 @@ fn run(cli: Cli) -> Result<i32> {
         return Ok(crate::bot::main());
     }
 
-    if let Some(url) = &cli.live {
-        use crate::live_pipeline::{run_live, LiveJob};
+    if let Some(url) = cli.live_url() {
+        use crate::livestream::live_pipeline::{run_live, LiveJob};
         let lj = LiveJob {
-            url: url.clone(),
+            url: url.to_string(),
             out_dir: cli.out.clone(),
             pre_roll: cli.pre_roll,
             post_roll: cli.post_roll,
@@ -300,16 +343,17 @@ fn run(cli: Cli) -> Result<i32> {
         return Ok(0);
     }
 
-    if cli.url.is_none() && cli.local.is_none() {
+    if !cli.has_source() {
         log("нужен либо URL источника, либо --local <файл>");
         return Ok(2);
     }
-    if cli.auto == 0 && cli.segment.is_empty() {
+    if cli.auto == 0 && !cli.has_segments() {
         log("нужен либо -s START-END (можно несколько), либо --auto N");
         return Ok(2);
     }
-    let mut segments = Vec::with_capacity(cli.segment.len());
-    for s in &cli.segment {
+    let specs = cli.segment_specs();
+    let mut segments = Vec::with_capacity(specs.len());
+    for s in specs {
         match parse_segment(s) {
             Ok(seg) => segments.push(seg),
             Err(exc) => {
@@ -319,21 +363,17 @@ fn run(cli: Cli) -> Result<i32> {
         }
     }
 
-    use crate::pipeline::{run_job, ReelJob};
-    let source = cli
-        .url
-        .clone()
-        .or_else(|| cli.local.as_ref().map(|p| p.display().to_string()))
-        .unwrap_or_default();
+    use crate::vod::pipeline::{run_job, ReelJob};
+    let source = cli.source();
     let job = ReelJob {
         source_url: source.clone(),
         segments,
         out_dir: cli.out.clone(),
         no_subs: cli.no_subs,
-        local_source: cli.local.clone(),
+        local_source: cli.local_source(),
         auto_count: cli.auto,
         webcam_spec,
-        channel: cli.url.clone().unwrap_or_default(),
+        channel: cli.channel(),
         send_telegram: cli.telegram,
         words: None,
         subtitle_lang: cli.subtitle_lang.clone(),

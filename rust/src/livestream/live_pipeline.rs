@@ -22,13 +22,13 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::chat::ChatMonitor;
+use crate::livestream::chat::ChatMonitor;
 use crate::config;
-use crate::live::{self, RingBuffer};
-use crate::moment;
-use crate::pipeline::{run_job, ReelJob};
-use crate::review::ReviewLog;
-use crate::subtitles;
+use crate::livestream::live::{self, RingBuffer};
+use crate::text::moment;
+use crate::vod::pipeline::{run_job, ReelJob};
+use crate::livestream::review::ReviewLog;
+use crate::text::subtitles;
 use crate::utils::{ensure_dir, log, slugify};
 
 #[derive(Clone)]
@@ -186,7 +186,7 @@ pub fn run_live(job: &LiveJob) -> Result<Vec<PathBuf>> {
             let rl = ReviewLog::new(dir)?;
             log(format!(
                 "live: review mode -> {} (label hit/miss in index.csv)",
-                rl.root.display()
+                rl.location()
             ));
             Some(rl)
         }

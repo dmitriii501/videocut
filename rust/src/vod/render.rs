@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use crate::config;
 use crate::utils::{ensure_dir, has_audio, log, video_size};
-use crate::webcam::{Panel, DEFAULT_PANEL};
+use crate::vod::webcam::{Panel, DEFAULT_PANEL};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Layout {

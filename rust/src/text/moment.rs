@@ -18,7 +18,7 @@
 use regex::Regex;
 use std::sync::OnceLock;
 
-use crate::subtitles::Word;
+use crate::text::subtitles::Word;
 
 fn cjk_regex() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();

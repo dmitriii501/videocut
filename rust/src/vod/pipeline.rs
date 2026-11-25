@@ -5,14 +5,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::config;
-use crate::describe;
-use crate::fetch;
-use crate::highlights;
-use crate::render;
-use crate::subtitles::{self, Word};
+use crate::vod::describe;
+use crate::vod::fetch;
+use crate::vod::highlights;
+use crate::vod::render;
+use crate::text::subtitles::{self, Word};
 use crate::telegram;
 use crate::utils::{duration, ensure_dir, fmt_ts, log, short_hash, slugify};
-use crate::webcam;
+use crate::vod::webcam;
 
 /// Callback invoked with human-readable progress notes as a job advances.
 pub type Progress = Arc<dyn Fn(&str) + Send + Sync>;
@@ -187,7 +187,7 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
                     let src = config::whisper_lang().unwrap_or_else(|| "en".to_string());
                     job.note(&format!("🌐 Перевожу субтитры {src}→{target}…"));
                     let translated =
-                        crate::translate::translate_words(&seg_words, target, &src, None);
+                        crate::text::translate::translate_words(&seg_words, target, &src, None);
                     log(format!("translated subtitles {src}->{target}"));
                     translated
                 } else {

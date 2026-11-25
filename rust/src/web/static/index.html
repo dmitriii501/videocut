@@ -1290,7 +1290,8 @@
     async function loadPackages() {
       try {
         const res = await fetch('/api/billing/packages');
-        const packs = await res.json();
+        const payload = await res.json();
+        const packs = Array.isArray(payload) ? payload : (payload.packages || []);
         ['packages-grid', 'landing-packages-grid'].forEach(gridId => {
           const grid = document.getElementById(gridId);
           if (!grid) return;
@@ -1342,17 +1343,58 @@
           body: JSON.stringify({ package_id: packageId })
         });
         const data = await res.json();
-        if (res.ok) {
-          currentUser.credits = data.credits;
-          updateAuthUI(currentUser);
-          alert(data.message);
-          switchView('studio');
-        } else {
+        if (!res.ok) {
           alert(data.error || 'Ошибка пополнения');
+          return;
         }
+        if (data.payment_url) {
+          // Real acquiring: hand off to the T-Bank payment page.
+          window.location.href = data.payment_url;
+          return;
+        }
+        // Demo mode (no acquiring keys): credits granted immediately.
+        currentUser.credits = data.credits;
+        updateAuthUI(currentUser);
+        alert(data.message);
+        switchView('studio');
       } catch (e) {
         alert('Ошибка связи с сервером');
       }
+    }
+
+    // After returning from the pay page (?order=...&paid=1) poll the order
+    // until the verified webhook flips it to "paid", then refresh balance.
+    async function checkPendingOrder() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('order');
+      if (!orderId || !currentToken) return;
+
+      let attempts = 0;
+      const poll = async () => {
+        attempts++;
+        try {
+          const res = await fetch('/api/billing/order?order=' + encodeURIComponent(orderId), {
+            headers: { 'Authorization': 'Bearer ' + currentToken }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'paid') {
+              if (currentUser) {
+                currentUser.credits = data.balance;
+                updateAuthUI(currentUser);
+              }
+              alert('Оплата прошла успешно! Начислено +' + data.credits + ' кредитов.');
+              history.replaceState({}, '', '/studio');
+              switchView('studio');
+              return;
+            }
+          }
+        } catch (e) {}
+        if (attempts < 20) {
+          setTimeout(poll, 1500);
+        }
+      };
+      poll();
     }
 
     // WebSocket for realtime telemetry & events
@@ -1409,6 +1451,8 @@
       } else {
         switchView('landing');
       }
+
+      checkPendingOrder();
 
       window.addEventListener('popstate', () => {
         const p = window.location.pathname.replace(/^\//, '');

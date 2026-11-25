@@ -22,8 +22,8 @@ use anyhow::Result;
 use serde_json::Value;
 
 use crate::config;
-use crate::live_pipeline::{run_live, LiveJob};
-use crate::pipeline::{run_job, Progress, ReelJob};
+use crate::livestream::live_pipeline::{run_live, LiveJob};
+use crate::vod::pipeline::{run_job, Progress, ReelJob};
 use crate::telegram;
 use crate::utils::{ensure_dir, html_escape, log, timestamp};
 

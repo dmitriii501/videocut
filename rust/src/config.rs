@@ -203,6 +203,36 @@ pub fn typesafe_samples() -> usize {
     env_parse("TYPESAFE_SAMPLES", 3)
 }
 
+// --- Payments (T-Bank / Tinkoff Kassa, API v2) -------------------------------
+
+pub fn tbank_terminal_key() -> Option<String> {
+    env_opt("TBANK_TERMINAL_KEY")
+}
+
+pub fn tbank_password() -> Option<String> {
+    env_opt("TBANK_PASSWORD")
+}
+
+pub fn tbank_api_url() -> String {
+    env_str("TBANK_API_URL", "https://securepay.tinkoff.ru/v2")
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// Public base URL of the site, used for payment redirect/notification URLs.
+/// Must be reachable from the internet (e.g. the Cloudflare Tunnel URL).
+pub fn public_url() -> String {
+    env_str("STREAMREELS_PUBLIC_URL", "http://localhost:8080")
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// Real acquiring is on only when both terminal credentials are present.
+/// Without them the service falls back to a local demo top-up.
+pub fn tbank_enabled() -> bool {
+    tbank_terminal_key().is_some() && tbank_password().is_some()
+}
+
 // --- Telegram ----------------------------------------------------------------
 
 pub fn tg_token() -> Option<String> {

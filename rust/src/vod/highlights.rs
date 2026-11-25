@@ -12,7 +12,7 @@ use regex::Regex;
 use std::path::Path;
 
 use crate::media;
-use crate::subtitles::Word;
+use crate::text::subtitles::Word;
 use crate::utils::{duration, log};
 
 /// Words that usually surround funny / hype moments (case-insensitive).

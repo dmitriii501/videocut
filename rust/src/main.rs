@@ -1,23 +1,13 @@
 mod bot;
-mod chat;
 mod cli;
 mod config;
-mod describe;
-mod fetch;
-mod highlights;
 mod http;
-mod live;
-mod live_pipeline;
+mod livestream;
 mod media;
-mod moment;
-mod pipeline;
-mod render;
-mod review;
-mod subtitles;
 mod telegram;
-mod translate;
+mod text;
 mod utils;
-mod webcam;
+mod vod;
 mod web;
 
 fn main() {

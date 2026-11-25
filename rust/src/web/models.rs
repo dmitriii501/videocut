@@ -72,6 +72,22 @@ pub struct PricingPackage {
     pub description: String,
 }
 
+/// A pending/paid top-up order. `amount_kopecks` is what the acquirer charges.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Order {
+    pub id: String,
+    pub user_id: String,
+    pub package_id: String,
+    pub credits: i64,
+    pub amount_kopecks: i64,
+    /// "pending", "paid", "canceled", "failed"
+    pub status: String,
+    pub tbank_payment_id: Option<String>,
+    pub payment_url: Option<String>,
+    pub created_at: String,
+    pub paid_at: Option<String>,
+}
+
 // --- Request / Response DTOs ---
 
 #[derive(Debug, Deserialize)]

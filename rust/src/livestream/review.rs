@@ -42,11 +42,16 @@ pub const COLUMNS: &[&str] = &[
 
 /// Append-only CSV + per-clip sidecars under `root`.
 pub struct ReviewLog {
-    pub root: PathBuf,
+    root: PathBuf,
     index: PathBuf,
 }
 
 impl ReviewLog {
+    /// The directory this log writes clips and `index.csv` into, for display.
+    pub fn location(&self) -> String {
+        self.root.display().to_string()
+    }
+
     pub fn new(root: &Path) -> Result<Self> {
         let root = ensure_dir(root)?;
         let index = root.join("index.csv");
