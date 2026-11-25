@@ -85,6 +85,7 @@ pub async fn run_worker(
         let count = task.count;
         let banner = task.banner;
         let subtitle_lang = task.job.subtitle_lang.clone();
+        let gameplay_preset = task.job.gameplay_preset.clone();
         let should_stop = task.should_stop.clone();
 
         log(format!("[worker] processing job {job_id} ({mode}): {stream_url}"));
@@ -171,6 +172,7 @@ pub async fn run_worker(
                     channel: stream_url.clone(),
                     subtitle_lang,
                     banner: banner.unwrap_or_else(config::banner_enabled),
+                    gameplay: Some(gameplay_preset),
                     progress: Some(progress_cb),
                     ..Default::default()
                 };

@@ -1,10 +1,12 @@
 //! Compose the final vertical reel natively with ffmpeg-next:
-//! stream screen on top (letterboxed on a blurred fill), static webcam crop
-//! below, burned-in ASS subtitles. Video -> H.264, audio -> AAC, muxed to MP4.
+//! stream screen on top (letterboxed on a blurred fill), gameplay clip or
+//! streamer webcam below, burned-in ASS subtitles. Video -> H.264, audio ->
+//! AAC, muxed to MP4.
 //!
 //! Layout (default 720x1280, 9:16):
 //!   TOP    (50%) = full stream frame, letterboxed on a blurred fill.
-//!   BOTTOM (50%) = streamer webcam panel, cropped to the band and scaled up.
+//!   BOTTOM (50%) = gameplay strip if requested, else the streamer webcam
+//!                  panel cropped to the band and scaled up.
 
 use anyhow::{anyhow, Result};
 use ffmpeg_next as ffmpeg;
@@ -208,28 +210,47 @@ fn banner_overlay_asset(lay: Layout) -> Option<PathBuf> {
 }
 
 /// Build the filtergraph spec (input pad unlabeled -> [out]).
+///
+/// The bottom band is either the gameplay strip (when `gameplay` is set) or the
+/// streamer's webcam crop.
+#[allow(clippy::too_many_arguments)]
 fn build_spec(
     lay: Layout,
     src_w: u32,
     src_h: u32,
     ass_path: Option<&Path>,
     panel: Panel,
+    gameplay: Option<&Path>,
+    dur: f64,
     banner: Option<&BannerOverlay>,
 ) -> String {
     let w = lay.width;
     let top = lay.top_h;
     let bot = lay.bot_h;
     let blur = format!("boxblur={}:{}", config::blur_radius(), config::blur_power());
-    let (wx, wy, ww, wh) = webcam_crop(src_w, src_h, panel, w, bot);
 
-    let mut spec = format!(
-        "split=3[sbg][sfg][swc];\
-         [sbg]scale={w}:{top}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{top},{blur}[bg];\
-         [sfg]scale={w}:{top}:force_original_aspect_ratio=decrease:flags=lanczos[fg];\
-         [bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1[vtop];\
-         [swc]crop={ww}:{wh}:{wx}:{wy},scale={w}:{bot}:flags=lanczos,setsar=1[vbot];\
-         [vtop][vbot]vstack=inputs=2[vs];"
-    );
+    let mut spec = match gameplay {
+        Some(strip) => format!(
+            "split=2[sbg][sfg];\
+             [sbg]scale={w}:{top}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{top},{blur}[bg];\
+             [sfg]scale={w}:{top}:force_original_aspect_ratio=decrease:flags=lanczos[fg];\
+             [bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1[vtop];\
+             movie={},trim=duration={dur},setpts=PTS-STARTPTS,setsar=1[vbot];\
+             [vtop][vbot]vstack=inputs=2[vs];",
+            escape_movie_path(strip),
+        ),
+        None => {
+            let (wx, wy, ww, wh) = webcam_crop(src_w, src_h, panel, w, bot);
+            format!(
+                "split=3[sbg][sfg][swc];\
+                 [sbg]scale={w}:{top}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{top},{blur}[bg];\
+                 [sfg]scale={w}:{top}:force_original_aspect_ratio=decrease:flags=lanczos[fg];\
+                 [bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1[vtop];\
+                 [swc]crop={ww}:{wh}:{wx}:{wy},scale={w}:{bot}:flags=lanczos,setsar=1[vbot];\
+                 [vtop][vbot]vstack=inputs=2[vs];"
+            )
+        }
+    };
 
     match ass_path {
         Some(p) if p.exists() && p.metadata().map(|m| m.len() > 0).unwrap_or(false) => {
@@ -454,6 +475,7 @@ pub fn render_reel(
     out_path: &Path,
     panel: Option<Panel>,
     banner: bool,
+    gameplay_clip: Option<&Path>,
 ) -> Result<PathBuf> {
     ffmpeg::init().ok();
     if let Some(parent) = out_path.parent() {
@@ -463,6 +485,19 @@ pub fn render_reel(
     let lay = layout();
     let (src_w, src_h) = video_size(source)?;
     let panel = panel.unwrap_or(Panel::new(DEFAULT_PANEL));
+
+    // Materialise the bottom-band gameplay strip, if requested. On failure we
+    // log and fall back to the webcam band rather than failing the whole reel.
+    let gameplay_strip = match gameplay_clip {
+        Some(clip) => {
+            let strip = crate::vod::gameplay::strip_for(lay.width, lay.bot_h, clip, dur);
+            if strip.is_none() {
+                log("gameplay: strip unavailable, falling back to webcam band");
+            }
+            strip
+        }
+        None => None,
+    };
 
     // Build the mid-roll banner overlay (centered in the clip) if enabled and
     // the clip is long enough to fit it with a little breathing room.
@@ -478,7 +513,16 @@ pub fn render_reel(
         None
     };
 
-    let spec = build_spec(lay, src_w, src_h, ass_path, panel, banner_overlay.as_ref());
+    let spec = build_spec(
+        lay,
+        src_w,
+        src_h,
+        ass_path,
+        panel,
+        gameplay_strip.as_deref(),
+        dur,
+        banner_overlay.as_ref(),
+    );
 
     let mut ictx = format::input(source).map_err(|e| anyhow!("open input: {e}"))?;
 

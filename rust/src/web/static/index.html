@@ -559,11 +559,14 @@
               <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [04] НИЖНИЙ ГЕЙМПЛЕЙ (9:16)
               </label>
-              <div class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 flex items-center justify-between">
-                <span>ВЕБКА + СТРИМ (без игры)</span>
-                <span class="text-[9px] text-chik-muted uppercase">скоро</span>
-              </div>
-              <p class="font-mono text-[10px] text-chik-muted">Сейчас в нижнюю половину кадра выводится лицо стримера (для витуберов — лицо аватара). Геймплей-фоны появятся позже.</p>
+              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
+                <option value="none" selected>ВЕБКА + СТРИМ (без игры)</option>
+                <option value="subway">SUBWAY SURFERS</option>
+                <option value="minecraft">MINECRAFT PARKOUR</option>
+                <option value="gta">GTA 5 DRIVING</option>
+                <option value="asmr">ASMR / SAND</option>
+              </select>
+              <p class="font-mono text-[10px] text-chik-muted">Нижняя половина кадра: выбери геймплей-подложку или оставь лицо стримера (для витуберов — лицо аватара).</p>
             </div>
 
             <!-- Matrix 5: Mid-roll banner -->
@@ -1051,6 +1054,8 @@
       const count = parseInt(document.getElementById('job-count').value);
       const bannerEl = document.getElementById('job-banner');
       const banner = bannerEl ? bannerEl.checked : true;
+      const gameplayEl = document.getElementById('job-gameplay');
+      const gameplayPreset = gameplayEl ? gameplayEl.value : 'none';
 
       try {
         const res = await fetch('/api/jobs', {
@@ -1064,7 +1069,8 @@
             mode: mode,
             count: count,
             subtitle_lang: 'ru',
-            banner: banner
+            banner: banner,
+            gameplay_preset: gameplayPreset
           })
         });
         const job = await res.json();
@@ -1286,6 +1292,34 @@
       }
     }
 
+    // Gameplay presets (kept in sync with the backend list)
+    async function loadGameplayPresets() {
+      try {
+        const res = await fetch('/api/gameplay');
+        const payload = await res.json();
+        const select = document.getElementById('job-gameplay');
+        if (!select) return;
+        const presets = payload.presets || [];
+        if (!presets.length) return;
+        const current = select.value;
+        select.innerHTML = '<option value="none">ВЕБКА + СТРИМ (без игры)</option>';
+        presets.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.key;
+          opt.textContent = String(p.label).toUpperCase();
+          select.appendChild(opt);
+        });
+        if (payload.enabled === false) {
+          select.value = 'none';
+          select.disabled = true;
+        } else {
+          select.value = current;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     // Packages
     async function loadPackages() {
       try {
@@ -1441,6 +1475,7 @@
     async function startApp() {
       await initAuth();
       connectWs();
+      loadGameplayPresets();
 
       const path = window.location.pathname.replace(/^\//, '');
       const hash = window.location.hash.replace(/^#/, '');

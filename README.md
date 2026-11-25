@@ -19,8 +19,9 @@
   - Twitch IRC чат: взвешенный подсчет реакций (`KEKW`, `LUL`, `Pog`, `monkaS`, капс).
 - **Умный видеопайплайн 9:16**:
   - Верхние 50% — стрим с фокусом и размытым фоном.
-  - Нижние 50% — трекинг лица стримера / вебка или динамичный геймплей (Subway Surfers, Minecraft Parkour, GTA V, ASMR).
+  - Нижние 50% — трекинг лица стримера / вебка **или** динамичная геймплей-подложка (Subway Surfers, Minecraft Parkour, GTA V, ASMR; можно задать свой клип или YouTube-поиск).
   - Караоке-субтитры с подсветкой текущего слова в такт речи (локальный `whisper-rs`).
+  - Анимированный промо-баннер в середине клипа.
 
 ---
 
@@ -63,9 +64,21 @@ cargo build --release
 # Live-режим (следить за прямым эфиром Twitch и резать клипы на лету)
 ./target/release/streamreels --live https://www.twitch.tv/<channel> --max-reels 3
 
+# Геймплей-подложка в нижней половине: пресет, свой файл или YouTube-поиск
+./target/release/streamreels "https://youtu.be/XXXX" --auto 3 --gameplay subway
+./target/release/streamreels "https://youtu.be/XXXX" --auto 3 --gameplay /path/clip.mp4
+./target/release/streamreels "https://youtu.be/XXXX" --auto 3 --gameplay-query "retro arcade gameplay"
+./target/release/streamreels "https://youtu.be/XXXX" --auto 3 --gameplay none   # только вебка
+
 # Telegram-бот (приём ссылок в ЛС)
 ./target/release/streamreels --bot
 ```
+
+Пресеты геймплея: `subway`, `minecraft`, `gta`, `asmr`, `none`. Клип скачивается
+один раз через `yt-dlp` и кешируется в `cache/gameplay/`; под нижнюю полосу
+предрендеривается полоса нужного размера. Отключить геймплей целиком можно
+переменной `STREAMREELS_GAMEPLAY=false`, а задать локальный клип для всех
+задач — `STREAMREELS_GAMEPLAY_CLIP=/path/clip.mp4`.
 
 ---
 
@@ -77,35 +90,45 @@ cargo build --release
 
 ## 📂 Структура проекта
 
+Исходники сгруппированы по смыслу (глубокие модули, зависимости без циклов:
+`livestream → vod → text → infra`).
+
 ```
 rust/
   src/
-    web/              # Веб-платформа: Axum, SQLite (chik.db), очередь задач, UI
+    vod/              # Конвейер нарезки VOD
+      pipeline.rs     # Оркестрация: источник → сегменты → рендер → сайдкар
+      fetch.rs        # Загрузка источника через yt-dlp
+      highlights.rs   # Алгоритм отбора лучших моментов
+      render.rs       # Рендеринг 9:16 через ffmpeg-next
+      describe.rs     # Заголовки, описания, хештеги
+      gameplay.rs     # Геймплей-подложка: пресеты, кеш, предрендер полосы
+      webcam.rs       # Автодетект лица/вебка-панели
+    livestream/       # Live-режим Twitch
+      live_pipeline.rs# Оркестрация live-нарезки
+      live.rs         # Кольцевой буфер и аудио-детект хайпа
+      chat.rs         # Twitch IRC чат-монитор
+      review.rs       # Разметка качества моментов
+    text/             # Текст и субтитры
+      subtitles.rs    # Субтитры whisper-rs с караоке ASS
+      translate.rs    # Перевод субтитров
+      moment.rs       # Пост-фильтр речи (проверка живого звука)
+    web/              # Веб-платформа: Axum, SQLite (chik.db), очередь, UI
       db.rs           # База данных: пользователи, сессии, задачи, рилсы
       models.rs       # DTO и модели данных
       queue.rs        # Фоновый воркер задач (OOM-защита)
-      routes/         # Эндпоинты (auth, jobs, reels, billing, ws)
+      tbank.rs        # Приём платежей T-Bank (API v2)
+      routes/         # Эндпоинты (auth, jobs, reels, billing, gameplay, ws)
       static/         # Встроенный фронтенд в темном стиле Volt Neon
       ui.rs           # Встраивание UI в бинарник
     bot.rs            # Telegram-бот
-    chat.rs           # Twitch IRC чат-монитор
     cli.rs            # Парсер аргументов командной строки
     config.rs         # Конфигурация и переменные окружения
-    describe.rs       # Генерация заголовков, описаний и тегов
-    fetch.rs          # Загрузка через yt-dlp
-    highlights.rs     # Алгоритм отбора лучших моментов
-    live.rs           # Кольцевой буфер и аудио-детект хайпа
-    live_pipeline.rs  # Оркестрация Live-режима Twitch
+    http.rs           # HTTP-хелперы (JSON POST)
     main.rs           # Точка входа
     media.rs          # Аудио- и видеоутилиты
-    moment.rs         # Пост-фильтр речи (проверка живого звука)
-    pipeline.rs       # Основной конвейер нарезки VOD
-    render.rs         # Рендеринг 9:16 через ffmpeg-next
-    review.rs         # Разметка качества моментов
-    subtitles.rs      # Субтитры whisper-rs с караоке ASS
     telegram.rs       # Отправка в Telegram
-    translate.rs      # Перевод субтитров
-    utils.rs          # Хелперы
-    webcam.rs         # Автодетект вебка-панели
+    utils.rs          # Хелперы (процессы, пути, логи)
 BRANDBOOK.md          # Брендбук ЧИК
+HANDOFF.md            # Состояние проекта: что сделано / что осталось
 ```

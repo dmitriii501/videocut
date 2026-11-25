@@ -4,6 +4,7 @@
 
 pub mod describe;
 pub mod fetch;
+pub mod gameplay;
 pub mod highlights;
 pub mod pipeline;
 pub mod render;

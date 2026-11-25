@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::config;
 use crate::vod::describe;
 use crate::vod::fetch;
+use crate::vod::gameplay;
 use crate::vod::highlights;
 use crate::vod::render;
 use crate::text::subtitles::{self, Word};
@@ -41,6 +42,9 @@ pub struct ReelJob {
     pub progress: Option<Progress>,
     /// Inject the animated mid-roll promo banner into each reel.
     pub banner: bool,
+    /// Gameplay preset for the bottom band (`"none"` => webcam only). See
+    /// [`crate::vod::gameplay`].
+    pub gameplay: Option<String>,
 }
 
 impl std::fmt::Debug for ReelJob {
@@ -79,6 +83,7 @@ impl Default for ReelJob {
             subtitle_lang: None,
             progress: None,
             banner: config::banner_enabled(),
+            gameplay: None,
         }
     }
 }
@@ -123,6 +128,23 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
             let p = webcam::parse_manual(spec)?;
             log(format!("webcam panel (manual): {:?}", p.as_tuple()));
             Some(p)
+        }
+        None => None,
+    };
+
+    // Resolve the gameplay background once per job (downloads + caches on
+    // first use). A failure here is non-fatal: the reel falls back to the
+    // webcam band.
+    let gameplay_clip: Option<PathBuf> = match &job.gameplay {
+        Some(spec) => {
+            job.note("🎮 Готовлю геймплей-подложку…");
+            match gameplay::clip_for(spec) {
+                Ok(clip) => clip,
+                Err(exc) => {
+                    log(format!("gameplay: {exc}; using webcam band"));
+                    None
+                }
+            }
         }
         None => None,
     };
@@ -212,12 +234,26 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
 
         let name = format!("{stem}-{idx:02}.mp4");
         let out = job.out_dir.join(name);
-        let panel = match &manual_panel {
-            Some(p) => p.clone(),
-            None => webcam::detect_panel_window(&source, start, dur),
+        // With a gameplay strip the webcam band is unused, so skip detection.
+        let panel = if gameplay_clip.is_some() {
+            webcam::Panel::new(webcam::DEFAULT_PANEL)
+        } else {
+            match &manual_panel {
+                Some(p) => p.clone(),
+                None => webcam::detect_panel_window(&source, start, dur),
+            }
         };
         job.note(&format!("🎬 Рендерю ролик {idx}/{total_segments}…"));
-        render::render_reel(&source, start, dur, ass_for_render.as_deref(), &out, Some(panel), job.banner)?;
+        render::render_reel(
+            &source,
+            start,
+            dur,
+            ass_for_render.as_deref(),
+            &out,
+            Some(panel),
+            job.banner,
+            gameplay_clip.as_deref(),
+        )?;
         produced.push(out.clone());
 
         // Description / title / hashtags from the reel's own transcript.

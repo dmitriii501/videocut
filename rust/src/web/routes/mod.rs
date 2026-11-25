@@ -4,6 +4,7 @@
 
 mod auth;
 mod billing;
+mod gameplay;
 mod jobs;
 mod reels;
 mod ws;
@@ -27,6 +28,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/me", get(auth::me))
         .route("/api/auth/logout", post(auth::logout))
+        .route("/api/gameplay", get(gameplay::list_presets))
         .route("/api/jobs", post(jobs::create_job).get(jobs::list_jobs))
         .route("/api/jobs/{id}", get(jobs::get_job))
         .route("/api/jobs/{id}/stop", post(jobs::stop_job))

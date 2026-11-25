@@ -10,11 +10,11 @@ use std::process::Command;
 use crate::config;
 use crate::utils::{duration, ensure_dir, log, retry, run_out, short_hash, video_size};
 
-fn ytdlp_bin() -> String {
+pub(crate) fn ytdlp_bin() -> String {
     std::env::var("STREAMREELS_YTDLP").unwrap_or_else(|_| "yt-dlp".to_string())
 }
 
-fn common_args() -> Vec<String> {
+pub(crate) fn common_args() -> Vec<String> {
     let mut args: Vec<String> = vec![
         "--no-playlist",
         "--no-progress",

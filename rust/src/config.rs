@@ -151,6 +151,25 @@ pub fn banner_font_file() -> Option<String> {
     env_opt("STREAMREELS_BANNER_FONT")
 }
 
+// --- Gameplay panel ----------------------------------------------------------
+
+/// Whether the gameplay panel is available at all. Disabling it forces every
+/// reel to the webcam-only bottom band, even if a preset was requested.
+pub fn gameplay_enabled() -> bool {
+    env_parse("STREAMREELS_GAMEPLAY", true)
+}
+
+/// A cached gameplay clip shorter than this is treated as broken and re-fetched.
+pub fn gameplay_min_seconds() -> f64 {
+    env_parse("STREAMREELS_GAMEPLAY_MIN_SECONDS", 15.0)
+}
+
+/// Optional local clip that overrides YouTube fetching for every preset
+/// (useful for offline runs and tests).
+pub fn gameplay_clip() -> Option<PathBuf> {
+    env_opt("STREAMREELS_GAMEPLAY_CLIP").map(PathBuf::from)
+}
+
 // --- Description -------------------------------------------------------------
 
 pub fn default_hashtags() -> Vec<String> {

@@ -130,7 +130,8 @@ fn default_count() -> usize {
     3
 }
 fn default_gameplay() -> String {
-    "subway".to_string()
+    // Opt-in: a job without an explicit preset keeps the webcam band.
+    "none".to_string()
 }
 
 #[derive(Debug, Deserialize)]

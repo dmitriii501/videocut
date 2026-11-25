@@ -33,11 +33,12 @@ pub struct Cli {
     #[arg(long)]
     pub local: Option<PathBuf>,
 
-    /// Use this local video instead of auto-downloading (accepted, unused).
+    /// Gameplay background for the bottom band: a preset (subway, minecraft,
+    /// gta, asmr), `none`, a local video file, or `query:<youtube search>`.
     #[arg(long)]
     pub gameplay: Option<String>,
 
-    /// YouTube search query for gameplay (repeatable, accepted, unused).
+    /// YouTube search query for gameplay (shorthand for `--gameplay query:...`).
     #[arg(long = "gameplay-query", action = ArgAction::Append)]
     pub gameplay_query: Vec<String>,
 
@@ -260,6 +261,15 @@ impl Cli {
         }
         None
     }
+
+    /// The gameplay background spec, if any. `--gameplay-query` is a shorthand
+    /// for a custom YouTube search and takes precedence over `--gameplay`.
+    fn gameplay_spec(&self) -> Option<String> {
+        if let Some(q) = self.gameplay_query.iter().find(|q| !q.trim().is_empty()) {
+            return Some(format!("query:{q}"));
+        }
+        self.gameplay.clone().filter(|s| !s.trim().is_empty())
+    }
 }
 
 /// Parse args and dispatch. Returns a process exit code.
@@ -365,6 +375,7 @@ fn run(cli: Cli) -> Result<i32> {
 
     use crate::vod::pipeline::{run_job, ReelJob};
     let source = cli.source();
+    let gameplay = cli.gameplay_spec();
     let job = ReelJob {
         source_url: source.clone(),
         segments,
@@ -379,6 +390,7 @@ fn run(cli: Cli) -> Result<i32> {
         subtitle_lang: cli.subtitle_lang.clone(),
         progress: None,
         banner: banner_flag(&cli),
+        gameplay,
     };
     let outs = run_job(&job)?;
     log("produced:");
