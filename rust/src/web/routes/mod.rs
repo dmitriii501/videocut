@@ -7,13 +7,26 @@ mod billing;
 mod gameplay;
 mod jobs;
 mod reels;
+mod webcam;
 mod ws;
+
+use std::path::Path;
 
 use axum::routing::{get, post};
 use axum::Router;
+use tower_http::services::ServeDir;
 
 use crate::web::ui;
 use crate::web::AppState;
+
+/// Sample clips live next to the HTML and are read from disk, same as the page.
+fn samples_dir() -> &'static str {
+    if Path::new("src/web/static/samples").is_dir() {
+        "src/web/static/samples"
+    } else {
+        "rust/src/web/static/samples"
+    }
+}
 
 /// Build the full route table. The returned router still needs its state
 /// (`.with_state`) and any layers the caller wants to apply.
@@ -24,11 +37,16 @@ pub fn router() -> Router<AppState> {
         .route("/app", get(ui::index))
         .route("/reels", get(ui::index))
         .route("/pricing", get(ui::index))
+        .nest_service(
+            "/samples",
+            ServeDir::new(samples_dir()).append_index_html_on_directories(false),
+        )
         .route("/api/auth/register", post(auth::register))
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/me", get(auth::me))
         .route("/api/auth/logout", post(auth::logout))
         .route("/api/gameplay", get(gameplay::list_presets))
+        .route("/api/webcam", get(webcam::defaults))
         .route("/api/jobs", post(jobs::create_job).get(jobs::list_jobs))
         .route("/api/jobs/{id}", get(jobs::get_job))
         .route("/api/jobs/{id}/stop", post(jobs::stop_job))

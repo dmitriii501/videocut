@@ -1,5 +1,5 @@
 # ЧИК / CHIK ✂️
-> **Автопилот вирусных нарезок для стримеров.** Из стрима (Twitch/YouTube) — в вертикальный клип 9:16 (Shorts, Reels, TikTok) за пару минут без монтажки.
+> **Автопилот вирусных нарезок для стримеров.** Из стрима (Twitch/YouTube) — в вертикальный клип 9:16 (Shorts, Reels, TikTok) за пару минут без монтажа.
 
 Написано полностью на **Rust** (нативно, без Python-рантайма, с защитой от OOM, ffmpeg-next, whisper-rs и встроенным веб-сервером Axum).
 
@@ -14,9 +14,9 @@
   - Автоматическая генерация заголовков, описаний и хештегов из транскрипта.
   - Разблокировка и скачивание чистого Full HD клипа.
   - Тарифные пакеты (Старт, Стример-Пак, Про).
-- **Детектор хайпа (Звук + Чат)**:
-  - Аудио-энергия: адаптивный порог громкости (MAD) для точного отлова смеха, крика и ярких эмоций.
-  - Twitch IRC чат: взвешенный подсчет реакций (`KEKW`, `LUL`, `Pog`, `monkaS`, капс).
+- **Детектор хайпа**:
+  - Запись (VOD): скан всего файла — громкость (RMS к медиане) и слова-маркеры из расшифровки Whisper. Чат записи не читается.
+  - Эфир: громкость (MAD) и Twitch IRC (`KEKW`, `LUL`, `Pog`, `monkaS`, капс).
 - **Умный видеопайплайн 9:16**:
   - Верхние 50% — стрим с фокусом и размытым фоном.
   - Нижние 50% — трекинг лица стримера / вебка **или** динамичная геймплей-подложка (Subway Surfers, Minecraft Parkour, GTA V, ASMR; можно задать свой клип или YouTube-поиск).
@@ -82,6 +82,35 @@ cargo build --release
 
 ---
 
+## 🐳 Docker
+
+Образ — весь ЧИК: веб, CLI, live и Telegram-бот. Внутри `ffmpeg` / `ffprobe`,
+`yt-dlp` и шрифты. Модель whisper, база и клипы **не** запекаются: с хоста
+монтируется `cache/`.
+
+```bash
+docker compose build
+docker compose up                 # веб, http://localhost:8080
+```
+
+Тот же образ, другие режимы (команда заменяет `--web`):
+
+```bash
+docker compose run --rm streamreels "https://youtu.be/XXXX" --auto 3
+docker compose run --rm streamreels --live https://www.twitch.tv/<channel> --max-reels 3
+docker compose run --rm streamreels --bot
+```
+
+`./cache` → `/data/cache`, `./out` → `/data/out`. Эти два пути внутри контейнера
+перебивают одноимённые переменные из `.env`. Остальные env (T-Bank, Telegram,
+whisper) читаются из `.env`. Порт хоста — `STREAMREELS_PORT` (по умолчанию
+`8080`). Фронтенд `rust/src/web/static` смонтирован в контейнер: правки HTML
+видны без пересборки, правки Rust — через `docker compose build`.
+
+Без Compose plugin те же флаги у `docker run` после `docker build -t streamreels:local .`.
+
+---
+
 ## 🎨 Брендбук
 
 Полное описание визуального стиля, Tone of Voice и позиционирования доступно в [BRANDBOOK.md](./BRANDBOOK.md).
@@ -129,6 +158,8 @@ rust/
     media.rs          # Аудио- и видеоутилиты
     telegram.rs       # Отправка в Telegram
     utils.rs          # Хелперы (процессы, пути, логи)
+Dockerfile            # Образ всего бинарника (веб, CLI, live, бот)
+docker-compose.yml    # Тома cache/out, порт, прокидка .env
 BRANDBOOK.md          # Брендбук ЧИК
 HANDOFF.md            # Состояние проекта: что сделано / что осталось
 ```

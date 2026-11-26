@@ -1,0 +1,25 @@
+# Весь бинарник ЧИК, не отдельный веб-образ.
+# Веб:  docker compose up
+# VOD:  docker compose run --rm streamreels "https://youtu.be/XXXX" --auto 3
+# Live: docker compose run --rm streamreels --live https://www.twitch.tv/<channel> --max-reels 3
+# Бот:  docker compose run --rm streamreels --bot
+
+services:
+  streamreels:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: streamreels:local
+    user: "${STREAMREELS_UID:-1000}:${STREAMREELS_GID:-1000}"
+    ports:
+      - "${STREAMREELS_PORT:-8080}:8080"
+    environment:
+      STREAMREELS_CACHE: /data/cache
+      STREAMREELS_OUTPUT: /data/out
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./cache:/data/cache
+      - ./out:/data/out
+      - ./rust/src/web/static:/app/rust/src/web/static:ro

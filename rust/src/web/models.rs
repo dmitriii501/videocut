@@ -121,6 +121,9 @@ pub struct CreateJobRequest {
     /// Override the mid-roll promo banner (None = service default).
     #[serde(default)]
     pub banner: Option<bool>,
+    /// Manual webcam box `x0,y0,x1,y1` in 0..1. Absent = detect, or the right-hand fallback.
+    #[serde(default)]
+    pub webcam: Option<String>,
 }
 
 fn default_mode() -> String {

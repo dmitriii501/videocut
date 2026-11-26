@@ -111,25 +111,6 @@
 </head>
 <body class="min-h-screen flex flex-col font-sans selection:bg-chik-orange selection:text-white antialiased">
 
-  <!-- TOP TELEMETRY RIBBON -->
-  <aside class="border-b border-chik-border bg-chik-dark/95 backdrop-blur-md px-4 py-1.5 text-[10px] font-mono text-chik-muted flex items-center justify-between overflow-x-auto whitespace-nowrap">
-    <div class="flex items-center space-x-4">
-      <span class="flex items-center space-x-1.5 text-chik-orange">
-        <span class="w-1.5 h-1.5 rounded-full bg-chik-orange animate-ping"></span>
-        <span class="font-bold tracking-widest">CHIK//SYS.ONLINE</span>
-      </span>
-      <span class="hidden sm:inline-block text-zinc-600">|</span>
-      <span class="hidden sm:inline-block">ENGINE: <span class="text-zinc-300">RUST 1.82 (NATIVE-SIMD)</span></span>
-      <span class="hidden md:inline-block text-zinc-600">|</span>
-      <span class="hidden md:inline-block">DETECTOR: <span class="text-zinc-300">AUDIO-MAD + TWITCH-IRC</span></span>
-      <span class="hidden lg:inline-block text-zinc-600">|</span>
-      <span class="hidden lg:inline-block">ASPECT: <span class="text-zinc-300">9:16 (720x1280)</span></span>
-    </div>
-    <div class="flex items-center space-x-3 text-right">
-      <span class="font-bold text-zinc-400" id="clock-display">00:00:00 UTC</span>
-    </div>
-  </aside>
-
   <!-- NAVBAR -->
   <header class="border-b border-chik-border bg-chik-black/95 backdrop-blur-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
@@ -205,23 +186,16 @@
     <section id="view-landing" class="space-y-24 py-2">
 
       <!-- HERO BLOCK: Asymmetric Grid + Interactive 9:16 Viewfinder Showcase -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-2">
-        
-        <!-- Left: Copy & Value Proposition -->
-        <div class="lg:col-span-7 space-y-6">
-          <div class="inline-flex items-center space-x-2 font-mono text-[11px] text-chik-orange uppercase tracking-widest border border-chik-orange/40 px-3 py-1 bg-chik-orange/10">
-            <span class="w-2 h-2 bg-chik-orange inline-block"></span>
-            <span>CHIK 2.0 // АВТОНОМНЫЙ КОНВЕЙЕР ВИРУСНЫХ КЛИПОВ</span>
-          </div>
-
+      <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,42rem)_17.5rem] gap-10 xl:gap-16 items-start pt-2">
+      <div class="max-w-3xl space-y-6">
           <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.92]">
             ИЗ СТРИМА — В ВИРУСНЫЙ КЛИП <br>
             <span class="text-chik-orange">ЗА 2 МИНУТЫ.</span> <br>
-            <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖКИ.</span>
+            <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖА.</span>
           </h1>
 
           <p class="font-mono text-sm sm:text-base text-zinc-300 max-w-xl leading-relaxed">
-            Нейросеть слушает стрим, мгновенно детектирует взрывы смеха, крики и реакцию зрителей в чате Twitch. Кадрирует спикера в 9:16, запускает динамичный геймплей и генерирует анимированные караоке-субтитры с переводом.
+            Проходит всю запись и режет громкие моменты и реплики. Кропает спикера в 9:16, снизу ставит геймплей, жжёт караоке-субтитры. Перевод на русский — MyMemory.
           </p>
 
           <!-- CTAs -->
@@ -239,7 +213,7 @@
               onmousedown="playClickSound()"
               class="border border-chik-border hover:border-chik-orange text-white font-mono text-xs uppercase tracking-wider px-6 py-5 transition flex items-center justify-center space-x-2 bg-chik-surface/60"
             >
-              <span>СМОТРЕТЬ КЛИПЫ И ПРИМЕРЫ</span>
+              <span>СМОТРЕТЬ МОИ КЛИПЫ</span>
               <span>▶</span>
             </button>
           </div>
@@ -247,8 +221,8 @@
           <!-- Quick Metrics Bar -->
           <div class="grid grid-cols-3 gap-4 pt-6 border-t border-chik-border/80 font-mono text-xs">
             <div>
-              <div class="text-chik-orange font-black text-lg">~2 МИН</div>
-              <div class="text-[10px] text-chik-muted uppercase">СКОРОСТЬ НАРЕЗКИ</div>
+              <div class="text-chik-orange font-black text-lg">15–45с</div>
+              <div class="text-[10px] text-chik-muted uppercase">ДЛИНА КЛИПА</div>
             </div>
             <div>
               <div class="text-white font-black text-lg">WHISPER-RS</div>
@@ -259,76 +233,31 @@
               <div class="text-[10px] text-chik-muted uppercase">TIKTOK & SHORTS</div>
             </div>
           </div>
+      </div>
+
+      <figure class="mx-auto w-full max-w-[17.5rem] lg:mx-0 lg:max-w-none lg:sticky lg:top-24 space-y-3">
+        <div class="aspect-reel bg-black border border-chik-border overflow-hidden shadow-2xl">
+          <video
+            src="/samples/kaicenat-001.mp4"
+            controls
+            playsinline
+            muted
+            loop
+            autoplay
+            class="w-full h-full object-cover bg-black"
+          ></video>
         </div>
-
-        <!-- Right: Real-Life 9:16 Viewfinder Showcase -->
-        <div class="lg:col-span-5 flex justify-center">
-          <div class="relative w-full max-w-[320px]">
-            
-            <!-- Corner Crosshairs & Frame -->
-            <div class="crosshair-box bg-chik-surface border-2 border-chik-border p-3 shadow-2xl relative">
-              
-              <!-- Phone Shell -->
-              <div class="aspect-reel bg-black relative overflow-hidden rounded border border-chik-borderLight shadow-2xl">
-                <!-- Animated preview placeholder (no public sample reel) -->
-                <div id="landing-hero-video" class="absolute inset-0 w-full h-full overflow-hidden bg-gradient-to-br from-zinc-900 via-chik-surface to-black">
-                  <div class="absolute inset-0 opacity-20" style="background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.12) 0px,rgba(255,255,255,0.12) 1px,transparent 1px,transparent 4px);"></div>
-                  <div class="absolute inset-x-0 h-24 bg-gradient-to-b from-transparent via-chik-orange/25 to-transparent animate-pulse" style="top:35%;"></div>
-                  <div class="absolute inset-0 flex items-center justify-center">
-                    <span class="font-mono text-[10px] text-chik-orange/70 tracking-widest uppercase">CHIK PREVIEW</span>
-                  </div>
-                </div>
-                
-                <!-- Viewfinder Live Overlay -->
-                <div class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
-                  <!-- Top HUD -->
-                  <div class="flex items-center justify-between font-mono text-[9px] text-white">
-                    <span class="bg-chik-black/90 px-2 py-0.5 border border-chik-border text-chik-orange font-bold flex items-center space-x-1">
-                      <span class="w-1.5 h-1.5 rounded-full bg-chik-orange animate-ping"></span>
-                      <span>LIVE PREVIEW</span>
-                    </span>
-                    <span class="bg-black/80 px-2 py-0.5 border border-zinc-800 text-zinc-400">9:16 REC</span>
-                  </div>
-
-                  <!-- Center Crosshair Target -->
-                  <div class="self-center w-12 h-12 border border-chik-orange/30 border-dashed rounded-full flex items-center justify-center opacity-70">
-                    <div class="w-1.5 h-1.5 bg-chik-orange rounded-full"></div>
-                  </div>
-
-                  <!-- Bottom HUD -->
-                  <div class="space-y-1.5 bg-gradient-to-t from-black via-black/80 to-transparent -mx-4 -mb-4 p-4 pt-6">
-                    <div class="flex items-center space-x-2 font-mono text-[9px]">
-                      <span class="bg-chik-orange text-white font-black px-1.5 py-0.5 uppercase">🔥 ХАЙП: 115%</span>
-                      <span class="text-zinc-400">theburntpeanut_247</span>
-                    </div>
-                    <div class="font-display font-bold text-xs text-white uppercase leading-snug">
-                      📞 Телефон звонит: Кто поможет спросить?
-                    </div>
-                    <div class="font-mono text-[9px] text-chik-muted">
-                      #shorts #clips #twitch #viral
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- Viewfinder Hardware Decal -->
-              <div class="flex items-center justify-between pt-2.5 px-1 font-mono text-[9px] text-zinc-500">
-                <span>VIEWFINDER 9:16</span>
-                <span>CHIK ENGINE v0.2.1</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
+        <figcaption class="font-mono text-[10px] uppercase tracking-wider text-chik-muted leading-relaxed">
+          <span class="text-chik-orange">Пример нарезки</span> · с этого компьютера<br>
+          <span class="normal-case tracking-normal text-xs text-white">Kai Cenat, эфир. «Ягуар… О ЧЁРТ!»</span>
+        </figcaption>
+      </figure>
       </div>
 
       <!-- SECTION 1: HOW IT WORKS (3 HARDWARE-ENGINEERED STEPS) -->
       <div class="space-y-8">
         <div class="border-b border-chik-border pb-4">
-          <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ АВТОМАТИЧЕСКИЙ КОНВЕЙЕР ]</div>
-          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
+          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">
             КАК РАБОТАЕТ ЧИК ЗА 3 ШАГА
           </h2>
         </div>
@@ -346,10 +275,10 @@
 
           <div class="crosshair-box bg-chik-surface border border-chik-border p-7 space-y-4 relative">
             <div class="font-mono text-4xl font-black text-chik-orange/40">02</div>
-            <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ИИ НАХОДИТ ХАЙП</div>
-            <h3 class="font-display font-bold text-lg text-white uppercase">Звук + Чат + Whisper</h3>
+            <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">СКАН ХАЙПА</div>
+            <h3 class="font-display font-bold text-lg text-white uppercase">Вся запись, не угадайка</h3>
             <p class="font-mono text-xs text-chik-muted leading-relaxed">
-              Адаптивный алгоритм громкости MAD ловит искренний смех и крики. Детектор чата находит взрывы эмодзи (KEKW, PogChamp). Whisper распознает речь.
+              Авто-хайп проходит весь ролик: громкость и слова из расшифровки Whisper. На эфире к звуку добавляется чат Twitch.
             </p>
           </div>
 
@@ -358,7 +287,7 @@
             <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ГОТОВЫЙ РИЛС</div>
             <h3 class="font-display font-bold text-lg text-white uppercase">9:16 + Субтитры + Теги</h3>
             <p class="font-mono text-xs text-chik-muted leading-relaxed">
-              Стример кадрируется по центру, внизу запускается геймплейная подложка, накладываются яркие караоке-субтитры, генерируется кликбейтный заголовок и хештеги.
+              Кроп по найденному лицу, снизу геймплей или вебка, караоке-субтитры. Заголовок и хештеги — из текста, или моделью, если задан ключ.
             </p>
           </div>
 
@@ -368,47 +297,46 @@
       <!-- SECTION 2: 6 ADVANTAGES -->
       <div class="space-y-8">
         <div class="border-b border-chik-border pb-4">
-          <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ ИНЖЕНЕРНЫЕ ПРЕИМУЩЕСТВА ]</div>
-          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
-            ПОЧЕМУ ЭТО ЗАЛЕТАЕТ В РЕКОМЕНДАЦИИ
+          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">
+            ИЗ ЧЕГО СОБИРАЕТСЯ КЛИП
           </h2>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 font-mono">
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 01 // СЛЕЖЕНИЕ ЗА ЛИЦОМ ]</div>
-            <h4 class="font-display font-bold text-base text-white uppercase">Стример всегда по центру</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Никаких криво обрезанных веб-камер. Система держит лицо в фокусе видоискателя 9:16.</p>
+            <h4 class="font-display font-bold text-base text-white uppercase">Кроп по лицу</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Ищет лицо и ставит его в кадр 9:16. Промах, VTuber или нет ключа — кроп может сесть мимо.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 02 // КАРАОКЕ-СУБТИТРЫ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Каждое слово в такт</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Слова вспыхивают неоном синхронно со звуком голоса. Досматриваемость ролика вырастает на 70%.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">Слова вспыхивают по таймингам Whisper. Русский перевод субтитров идёт через MyMemory.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 03 // ДИНАМИЧНЫЙ ГЕЙМПЛЕЙ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Subway, Minecraft, GTA</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Нижняя половина экрана заполняется гипнотическим геймплеем для удержания зрителя в TikTok.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">Нижняя половина — геймплей на выбор: Subway, Minecraft, GTA, ASMR или свой клип.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 04 // ДЕТЕКТОР ВЗРЫВА ЧАТА ]</div>
-            <h4 class="font-display font-bold text-base text-white uppercase">Оценка реакции зрителей</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Всплеск сообщений со смайликами хайпа мгновенно сигнализирует о самом смешном моменте стрима.</p>
+            <h4 class="font-display font-bold text-base text-white uppercase">Чат только на эфире</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Всплеск Twitch-чата поднимает оценку живого момента. В записи VOD чат не читается: там громкость и речь.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 05 // ГОТОВОЕ ОПИСАНИЕ И ТЕГИ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Копируй и публикуй</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">В комплекте с каждым MP4 генерируется цепляющий заголовок, краткий синопсис и вирусные хештеги.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">К каждому MP4 — заголовок, синопсис и хештеги. С ключом модели пишет LLM, без ключа — из транскрипта.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 06 // НАДЕЖНЫЙ RUST ДВИЖОК ]</div>
-            <h4 class="font-display font-bold text-base text-white uppercase">Мгновенный локальный рендер</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Никаких очередей сторонних сервисов. Быстрая обработка через аппаратно ускоренный C/Rust пайплайн.</p>
+            <h4 class="font-display font-bold text-base text-white uppercase">Локальный рендер</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Кадр собирает Rust, кодирует ffmpeg в H.264 на этой машине. Не видеокарта и не чужой облачный рендер.</p>
           </div>
         </div>
       </div>
@@ -417,8 +345,7 @@
       <div class="space-y-8">
         <div class="flex items-center justify-between border-b border-chik-border pb-4">
           <div>
-            <div class="font-mono text-xs text-chik-orange uppercase tracking-wider font-bold">[ ТАРИФЫ ]</div>
-            <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight mt-1">
+            <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">
               ПРОЗРАЧНЫЕ ПАКЕТЫ КЛИПОВ
             </h2>
           </div>
@@ -434,9 +361,6 @@
 
       <!-- FINAL CALL TO ACTION -->
       <div class="crosshair-box bg-chik-surface border border-chik-orange/70 p-10 sm:p-14 text-center space-y-6 glow-orange-sm">
-        <div class="inline-block font-mono text-xs uppercase text-chik-orange font-bold tracking-widest bg-chik-orange/10 border border-chik-orange/40 px-3 py-1">
-          START CREATING TODAY // 5 CLIPS FREE
-        </div>
         <h2 class="font-display font-black text-3xl sm:text-5xl uppercase text-white tracking-tight max-w-2xl mx-auto">
           ХВАТИТ МОНТИРОВАТЬ РУКАМИ. <br>
           <span class="text-chik-orange">ЗАПУСТИ ЧИК СЕЙЧАС.</span>
@@ -463,13 +387,8 @@
       <!-- STUDIO COCKPIT HEADER -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-chik-border pb-5 gap-4">
         <div>
-          <div class="inline-flex items-center space-x-2 font-mono text-[10px] text-chik-orange uppercase tracking-widest border border-chik-orange/30 px-2.5 py-0.5 bg-chik-orange/10 mb-2">
-            <span class="w-1.5 h-1.5 bg-chik-orange rounded-full animate-ping"></span>
-            <span>AUTONOMOUS ENGINE // FLIGHT DECK</span>
-          </div>
-          <h1 class="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-tight flex items-center space-x-3">
-            <span>КОНСОЛЬ НАРЕЗКИ СТРИМА</span>
-            <span class="text-xs font-mono font-normal text-chik-muted hidden sm:inline">v0.2.1</span>
+          <h1 class="font-display font-black text-2xl sm:text-3xl uppercase text-white tracking-tight">
+            КОНСОЛЬ НАРЕЗКИ СТРИМА
           </h1>
         </div>
         
@@ -487,11 +406,7 @@
 
       <!-- CUTTER CONSOLE: Hardware Flight Deck Design -->
       <div class="crosshair-box border border-chik-border bg-chik-surface p-6 sm:p-10 shadow-2xl relative">
-        <div class="flex items-center justify-between border-b border-chik-border pb-4 mb-8 font-mono text-xs">
-          <div class="flex items-center space-x-2 text-zinc-400">
-            <span class="w-2 h-2 bg-chik-orange rounded-full animate-pulse"></span>
-            <span class="font-bold text-white uppercase tracking-wider">CUTTER CONSOLE v0.2.1</span>
-          </div>
+        <div class="flex items-center justify-end border-b border-chik-border pb-4 mb-8 font-mono text-xs">
           <div class="flex items-center space-x-3 text-[11px] text-chik-muted">
             <button type="button" onclick="insertDemoUrl('twitch')" class="hover:text-chik-orange transition underline">
               [ДЕМО TWITCH]
@@ -538,7 +453,7 @@
                 <option value="auto">⚡ АВТО-ХАЙП (Лучшие моменты VOD)</option>
                 <option value="live">🔴 LIVE-МОНИТОР (Ждать хайп в эфире)</option>
               </select>
-              <p class="font-mono text-[10px] text-chik-muted">Авто-хайп сканирует весь стрим за секунды и нарезает пики эмоций.</p>
+              <p class="font-mono text-[10px] text-chik-muted">Авто-хайп проходит всю запись и режет пики громкости и реплик. На эфире смотрит звук и чат Twitch.</p>
             </div>
 
             <!-- Matrix 2: Clips Count -->
@@ -582,6 +497,30 @@
               <p class="font-mono text-[10px] text-chik-muted">В середине ролика появляется анимированный баннер сервиса, затем клип продолжается.</p>
             </div>
 
+          </div>
+
+          <div id="webcam-editor" class="hidden border border-chik-border bg-chik-card p-5 space-y-3">
+            <div class="flex items-center justify-between gap-3 font-mono text-xs">
+              <label class="font-bold text-white uppercase tracking-wider">[06] ЗОНА ВЕБКИ</label>
+              <span id="webcam-box-label" class="text-chik-orange font-bold">x 0.70–1.00 · y 0.00–1.00</span>
+            </div>
+            <p class="font-mono text-[10px] text-chik-muted leading-relaxed">
+              Автопоиска лица нет. Справа уже стоит запасная рамка. Перетащи её, потяни углы или нарисуй новую по схеме кадра. Это не превью стрима.
+            </p>
+            <div id="webcam-stage" class="relative w-full max-w-2xl aspect-video bg-chik-black border border-chik-borderLight overflow-hidden touch-none select-none">
+              <div class="absolute inset-0 pointer-events-none opacity-40" style="background-image:linear-gradient(to right,rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:12.5% 25%;"></div>
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none font-mono text-[10px] uppercase tracking-widest text-zinc-600">Кадр стрима 16:9</div>
+              <div id="webcam-rect" class="absolute border-2 border-chik-orange bg-chik-orange/25 cursor-move">
+                <span data-handle="nw" class="absolute -left-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
+                <span data-handle="ne" class="absolute -right-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
+                <span data-handle="sw" class="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
+                <span data-handle="se" class="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
+                <span class="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold uppercase text-white">Вебка</span>
+              </div>
+            </div>
+            <button type="button" id="webcam-reset" class="font-mono text-[10px] uppercase font-bold text-chik-muted hover:text-white border border-chik-border px-3 py-1.5">
+              Вернуть запасную справа
+            </button>
           </div>
 
           <!-- Launch Button: Big, Tactile, Industrial Safety Orange -->
@@ -632,7 +571,6 @@
             <button type="button" onclick="handleStopActiveJob()" class="text-[10px] uppercase font-bold text-chik-coral border border-chik-coral/50 hover:bg-chik-coral hover:text-white px-2.5 py-1 transition">
               🛑 ОСТАНОВИТЬ
             </button>
-            <span class="text-chik-orange font-bold hidden sm:inline">[REALTIME TELEMETRY]</span>
           </div>
         </div>
       </div>
@@ -688,7 +626,6 @@
     <!-- VIEW 3: PRICING -->
     <section id="view-pricing" class="hidden space-y-10 max-w-5xl mx-auto py-6">
       <div class="text-center space-y-3">
-        <div class="inline-block font-mono text-xs text-chik-orange uppercase tracking-widest">[ PAY-AS-YOU-GO ]</div>
         <h2 class="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
           ЧЕСТНАЯ ОПЛАТА ЗА КЛИПЫ
         </h2>
@@ -712,15 +649,6 @@
       <div class="bg-black flex items-center justify-center p-4 md:w-1/2 relative">
         <div class="aspect-reel h-[65vh] max-h-[580px] bg-zinc-950 border border-chik-border relative overflow-hidden shadow-2xl">
           <video id="modal-video" controls autoplay playsinline class="w-full h-full object-cover"></video>
-          
-          <!-- Viewfinder HUD Overlays -->
-          <div class="absolute top-2 left-2 text-[9px] font-mono text-chik-coral flex items-center space-x-1 select-none pointer-events-none">
-            <span class="w-1.5 h-1.5 rounded-full bg-chik-coral animate-ping"></span>
-            <span>● REC 00:28:14</span>
-          </div>
-          <div class="absolute bottom-2 right-2 text-[9px] font-mono text-zinc-500 select-none pointer-events-none">
-            9:16 SAFE_ZONE
-          </div>
         </div>
       </div>
 
@@ -850,15 +778,6 @@
         badge.innerText = '';
       }
     }
-
-    // UTC Clock
-    function updateClock() {
-      const now = new Date();
-      const el = document.getElementById('clock-display');
-      if (el) el.innerText = now.toISOString().substring(11, 19) + ' UTC';
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
 
     // Build an authenticated media URL (media elements can't send headers).
     function videoUrl(id) {
@@ -1070,7 +989,8 @@
             count: count,
             subtitle_lang: 'ru',
             banner: banner,
-            gameplay_preset: gameplayPreset
+            gameplay_preset: gameplayPreset,
+            webcam: webcamSpecForJob(gameplayPreset)
           })
         });
         const job = await res.json();
@@ -1315,9 +1235,164 @@
         } else {
           select.value = current;
         }
+        syncWebcamEditor();
       } catch (e) {
         console.error(e);
       }
+    }
+
+    let webcamAuto = null;
+    let webcamTouched = false;
+    let webcamFallback = { x0: 0.7, y0: 0, x1: 1, y1: 1 };
+    let webcamBox = { x0: 0.7, y0: 0, x1: 1, y1: 1 };
+
+    function clamp01(v) {
+      return Math.min(1, Math.max(0, v));
+    }
+
+    function orderedBox(b) {
+      return {
+        x0: Math.min(b.x0, b.x1),
+        y0: Math.min(b.y0, b.y1),
+        x1: Math.max(b.x0, b.x1),
+        y1: Math.max(b.y0, b.y1),
+      };
+    }
+
+    function normalizeBox(b) {
+      const o = orderedBox(b);
+      let { x0, y0, x1, y1 } = o;
+      x0 = clamp01(x0);
+      y0 = clamp01(y0);
+      x1 = clamp01(x1);
+      y1 = clamp01(y1);
+      if (x1 - x0 < 0.04) x1 = Math.min(1, x0 + 0.04);
+      if (y1 - y0 < 0.04) y1 = Math.min(1, y0 + 0.04);
+      if (x1 - x0 < 0.04) x0 = Math.max(0, x1 - 0.04);
+      if (y1 - y0 < 0.04) y0 = Math.max(0, y1 - 0.04);
+      return { x0, y0, x1, y1 };
+    }
+
+    function paintWebcamBox() {
+      const el = document.getElementById('webcam-rect');
+      const label = document.getElementById('webcam-box-label');
+      if (!el) return;
+      const b = orderedBox(webcamBox);
+      el.style.left = (b.x0 * 100) + '%';
+      el.style.top = (b.y0 * 100) + '%';
+      el.style.width = ((b.x1 - b.x0) * 100) + '%';
+      el.style.height = ((b.y1 - b.y0) * 100) + '%';
+      if (label) {
+        label.textContent = `x ${b.x0.toFixed(2)}–${b.x1.toFixed(2)} · y ${b.y0.toFixed(2)}–${b.y1.toFixed(2)}`;
+      }
+    }
+
+    function syncWebcamEditor() {
+      const editor = document.getElementById('webcam-editor');
+      if (!editor) return;
+      const gameplay = document.getElementById('job-gameplay');
+      const webcamMode = !gameplay || gameplay.value === 'none';
+      editor.classList.toggle('hidden', !(webcamAuto === false && webcamMode));
+    }
+
+    function webcamSpecForJob(gameplayPreset) {
+      if (webcamAuto !== false || gameplayPreset !== 'none') return undefined;
+      const b = normalizeBox(webcamBox);
+      return [b.x0, b.y0, b.x1, b.y1].map(n => n.toFixed(4)).join(',');
+    }
+
+    async function loadWebcamConfig() {
+      try {
+        const res = await fetch('/api/webcam');
+        if (!res.ok) throw new Error('webcam api');
+        const data = await res.json();
+        webcamAuto = !!data.auto;
+        if (Array.isArray(data.box) && data.box.length === 4) {
+          webcamFallback = {
+            x0: Number(data.box[0]),
+            y0: Number(data.box[1]),
+            x1: Number(data.box[2]),
+            y1: Number(data.box[3]),
+          };
+          if (!webcamTouched) webcamBox = { ...webcamFallback };
+        }
+      } catch (e) {
+        webcamAuto = false;
+      }
+      paintWebcamBox();
+      syncWebcamEditor();
+    }
+
+    function initWebcamStage() {
+      const stage = document.getElementById('webcam-stage');
+      const reset = document.getElementById('webcam-reset');
+      if (!stage || stage.dataset.ready) return;
+      stage.dataset.ready = '1';
+      let drag = null;
+      const rel = (ev) => {
+        const r = stage.getBoundingClientRect();
+        return {
+          x: clamp01((ev.clientX - r.left) / r.width),
+          y: clamp01((ev.clientY - r.top) / r.height),
+        };
+      };
+      stage.addEventListener('pointerdown', (ev) => {
+        const p = rel(ev);
+        const handle = ev.target.closest('[data-handle]');
+        webcamTouched = true;
+        if (handle) {
+          drag = { mode: 'resize', handle: handle.dataset.handle, start: { ...webcamBox } };
+        } else if (ev.target.closest('#webcam-rect')) {
+          drag = { mode: 'move', px: p.x, py: p.y, start: orderedBox(webcamBox) };
+        } else {
+          drag = { mode: 'draw', x0: p.x, y0: p.y };
+          webcamBox = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+        }
+        stage.setPointerCapture(ev.pointerId);
+        paintWebcamBox();
+        ev.preventDefault();
+      });
+      stage.addEventListener('pointermove', (ev) => {
+        if (!drag) return;
+        const p = rel(ev);
+        if (drag.mode === 'move') {
+          const w = drag.start.x1 - drag.start.x0;
+          const h = drag.start.y1 - drag.start.y0;
+          let x0 = drag.start.x0 + (p.x - drag.px);
+          let y0 = drag.start.y0 + (p.y - drag.py);
+          x0 = Math.min(Math.max(0, x0), 1 - w);
+          y0 = Math.min(Math.max(0, y0), 1 - h);
+          webcamBox = { x0, y0, x1: x0 + w, y1: y0 + h };
+        } else if (drag.mode === 'draw') {
+          webcamBox = { x0: drag.x0, y0: drag.y0, x1: p.x, y1: p.y };
+        } else {
+          const b = { ...drag.start };
+          if (drag.handle.includes('w')) b.x0 = p.x;
+          if (drag.handle.includes('e')) b.x1 = p.x;
+          if (drag.handle.includes('n')) b.y0 = p.y;
+          if (drag.handle.includes('s')) b.y1 = p.y;
+          webcamBox = b;
+        }
+        paintWebcamBox();
+      });
+      const endDrag = () => {
+        if (!drag) return;
+        drag = null;
+        webcamBox = normalizeBox(webcamBox);
+        paintWebcamBox();
+      };
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      if (reset) {
+        reset.addEventListener('click', () => {
+          webcamTouched = true;
+          webcamBox = { ...webcamFallback };
+          paintWebcamBox();
+        });
+      }
+      const gameplay = document.getElementById('job-gameplay');
+      if (gameplay) gameplay.addEventListener('change', syncWebcamEditor);
+      paintWebcamBox();
     }
 
     // Packages
@@ -1475,7 +1550,9 @@
     async function startApp() {
       await initAuth();
       connectWs();
+      initWebcamStage();
       loadGameplayPresets();
+      loadWebcamConfig();
 
       const path = window.location.pathname.replace(/^\//, '');
       const hash = window.location.hash.replace(/^#/, '');

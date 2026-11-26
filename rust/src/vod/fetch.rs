@@ -125,25 +125,49 @@ fn download(url: &str, outdir: &Path, max_height: u32) -> Result<PathBuf> {
 }
 
 /// Download (or reuse a cached copy of) the source VOD.
+///
+/// The cache key includes the height cap. A file saved at 720p is not reused
+/// when the reel asks for 1080, and the stamped name is what the next job finds.
 pub fn fetch_source(url: &str, _work: &Path) -> Result<PathBuf> {
-    let key = short_hash(url);
+    let height = config::max_source_height();
+    let key = short_hash(&format!("{url}\n{height}"));
     let outdir = ensure_dir(&config::cache().join("sources"))?;
+    let prefix = format!("{key}-");
     if let Ok(entries) = std::fs::read_dir(&outdir) {
         for entry in entries.flatten() {
             let p = entry.path();
             let name = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            if name.contains(&key) && p.stat_size() > 0 {
+            if name.starts_with(&prefix) && name.ends_with(".mp4") && p.stat_size() > 0 {
                 log(format!("reusing cached source: {}", p.display()));
                 return Ok(p);
             }
         }
     }
-    log(format!("downloading source: {url}"));
-    let path = download(url, &outdir, config::max_source_height())?;
+    log(format!("downloading source: {url} (<= {height}p)"));
+    let path = download(url, &outdir, height)?;
+    let path = stamp_cached(&outdir, &prefix, path)?;
     let dur = duration(&path);
     let size = video_size(&path).map(|(w, h)| format!("{w}x{h}")).unwrap_or_default();
     log(format!("source ready: {} ({dur:.0}s, {size})", path.display()));
     Ok(path)
+}
+
+/// Prefix the downloaded file so a later job can tell this height from an older one.
+fn stamp_cached(outdir: &Path, prefix: &str, path: PathBuf) -> Result<PathBuf> {
+    let name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("source.mp4");
+    if name.starts_with(prefix) {
+        return Ok(path);
+    }
+    let dest = outdir.join(format!("{prefix}{name}"));
+    if dest.exists() && dest.metadata().map(|m| m.len() > 0).unwrap_or(false) {
+        let _ = std::fs::remove_file(&path);
+        return Ok(dest);
+    }
+    std::fs::rename(&path, &dest)?;
+    Ok(dest)
 }
 
 /// Small helper so we can call `.stat_size()` on a Path.

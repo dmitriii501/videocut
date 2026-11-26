@@ -59,13 +59,15 @@ pub fn translate_cache() -> PathBuf {
 }
 
 // --- Final reel canvas -------------------------------------------------------
+// 1080×1920 is the real output frame. The source cap matches it, so a fresh
+// download is not a 720p picture stretched up to Full HD.
 
 pub fn reel_w() -> u32 {
-    env_parse("REEL_W", 720)
+    env_parse("REEL_W", 1080)
 }
 
 pub fn reel_h() -> u32 {
-    env_parse("REEL_H", 1280)
+    env_parse("REEL_H", 1920)
 }
 
 pub fn fps() -> u32 {
@@ -73,7 +75,7 @@ pub fn fps() -> u32 {
 }
 
 pub fn max_source_height() -> u32 {
-    env_parse("MAX_SOURCE_HEIGHT", 720)
+    env_parse("MAX_SOURCE_HEIGHT", 1080)
 }
 
 // --- Render tuning -----------------------------------------------------------

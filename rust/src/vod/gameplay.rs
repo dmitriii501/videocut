@@ -131,12 +131,14 @@ fn cached_clip(key: &str) -> Option<PathBuf> {
 }
 
 fn ensure_clip(key: &str, query: &str) -> Result<PathBuf> {
-    if let Some(clip) = cached_clip(key) {
+    // Height is part of the name so a 720p clip is not scaled up and called 1080.
+    let key = format!("{key}-h{}", config::max_source_height());
+    if let Some(clip) = cached_clip(&key) {
         log(format!("gameplay: reusing cached clip {}", clip.display()));
         return Ok(clip);
     }
     log(format!("gameplay: downloading {query:?}"));
-    let clip = download(key, query)?;
+    let clip = download(&key, query)?;
     let dur = duration(&clip);
     if dur < config::gameplay_min_seconds() {
         bail!(

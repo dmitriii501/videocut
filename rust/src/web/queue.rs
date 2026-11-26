@@ -19,6 +19,8 @@ pub struct JobTask {
     pub job: Job,
     pub count: usize,
     pub banner: Option<bool>,
+    /// Manual webcam box. `None` leaves detection (or the right-hand fallback) in charge.
+    pub webcam_spec: Option<String>,
     pub should_stop: Arc<AtomicBool>,
 }
 
@@ -86,6 +88,7 @@ pub async fn run_worker(
         let banner = task.banner;
         let subtitle_lang = task.job.subtitle_lang.clone();
         let gameplay_preset = task.job.gameplay_preset.clone();
+        let webcam_spec = task.webcam_spec.clone();
         let should_stop = task.should_stop.clone();
 
         log(format!("[worker] processing job {job_id} ({mode}): {stream_url}"));
@@ -160,6 +163,7 @@ pub async fn run_worker(
                     on_reel: Some(on_reel_cb),
                     subtitle_lang,
                     banner: banner.unwrap_or_else(config::banner_enabled),
+                    webcam_spec: webcam_spec.clone(),
                     ..Default::default()
                 };
                 live_pipeline::run_live(&lj)
@@ -173,6 +177,7 @@ pub async fn run_worker(
                     subtitle_lang,
                     banner: banner.unwrap_or_else(config::banner_enabled),
                     gameplay: Some(gameplay_preset),
+                    webcam_spec,
                     progress: Some(progress_cb),
                     ..Default::default()
                 };

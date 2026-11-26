@@ -85,6 +85,34 @@ nohup ./target/release/streamreels --web >> ../cache/logs/web.log 2>&1 &
 ./target/release/streamreels --bot
 ```
 
+### Docker (весь бинарник)
+
+Образ `streamreels:local` — не веб-обёртка: entrypoint это `streamreels`,
+внутри ffmpeg, ffprobe, yt-dlp и шрифты. Режимы те же, что у хостового
+бинарника (`--web`, URL/`--auto`, `--live`, `--bot`).
+
+```bash
+docker compose build
+docker compose up                              # веб
+docker compose run --rm streamreels --help     # любой другой режим — свои аргументы
+```
+
+Тома: `./cache` → `/data/cache` (модель, `chik.db`, геймплей), `./out` →
+`/data/out`. `STREAMREELS_CACHE` / `STREAMREELS_OUTPUT` в контейнере указывают
+сюда и перебивают `.env`, потому что `config::root()` запекается из
+`CARGO_MANIFEST_DIR` сборки (`/src`) и на рантайме бесполезен. HTML
+`rust/src/web/static` смонтирован: правки фронта без пересборки.
+
+На этой машине plugin Compose может отсутствовать (`docker compose` → unknown
+command). Тогда `docker build -t streamreels:local .` и `docker run` с теми же
+флагами, томами и `-e STREAMREELS_CACHE=/data/cache -e STREAMREELS_OUTPUT=/data/out`.
+Если хостовый `streamreels --web` уже занял 8080, задай `STREAMREELS_PORT`,
+чтобы порт контейнера не столкнулся с ним.
+
+Сборка образа тяжёлая (whisper.cpp + libav). В Dockerfile намеренно
+`CARGO_BUILD_JOBS=1` и LTO выключен: на ~10 ГиБ RAM с занятой сессией thin LTO
+уходит в OOM. TLS к crates.io тут флапает — при обрыве просто повтори build.
+
 ### Остановка / перезапуск сервера
 
 **Только по PID**, никогда `pkill -f` (снесёт лишнее):
@@ -152,7 +180,8 @@ SPA опрашивает статус заказа при возврате (`?or
 | `WHISPER_MODEL`, `WHISPER_LANG`, `WHISPER_THREADS` | субтитры |
 | `STREAMREELS_LLM_*`, `OPENAI_API_KEY` | генерация заголовков/описаний |
 | `STREAMREELS_TG_TOKEN`, `STREAMREELS_TG_CHAT_ID`, `STREAMREELS_TG_ALLOWED` | Telegram |
-| `REEL_W`, `REEL_H`, `REEL_FPS`, `REEL_CRF`, `REEL_PRESET` | параметры рендера |
+| `REEL_W`, `REEL_H`, `REEL_FPS`, `REEL_CRF`, `REEL_PRESET` | параметры рендера (по умолчанию 1080×1920, 30 fps) |
+| `MAX_SOURCE_HEIGHT` | потолок скачивания VOD, геймплея и эфира (по умолчанию 1080) |
 | `STREAMREELS_BANNER*` | промо-баннер |
 | `STREAMREELS_GAMEPLAY` | вкл/выкл геймплей-подложку (по умолчанию `true`) |
 | `STREAMREELS_GAMEPLAY_CLIP` | локальный клип для всех задач (перебивает пресеты) |
@@ -272,6 +301,8 @@ git push origin main
   кеш клипов, предрендер полосы, вставка через `movie=`+`trim`; UI-селектор,
   `GET /api/gameplay`, поле `gameplay_preset`, CLI `--gameplay`.
 - **Документация**: README и этот HANDOFF приведены к текущей структуре.
+- **Docker**: `Dockerfile` + `docker-compose.yml` — образ всего бинарника
+  (веб, CLI, live, бот), кэш и `out` томами с хоста.
 
 ---
 
@@ -287,7 +318,7 @@ git push origin main
 - **Геймплей-подложка** реализована (`vod/gameplay.rs`): пресеты `subway`,
   `minecraft`, `gta`, `asmr`, свой файл или `query:<поиск>`. Клип качается через
   `yt-dlp` и кешируется в `cache/gameplay/`; под нижнюю полосу предрендерится
-  strip (60 с, 720×640) и вставляется через `movie=`+`trim`. Выбор — в UI
+  strip (от 60 с, по умолчанию 1080×960) и вставляется через `movie=`+`trim`. Выбор — в UI
   (`select#job-gameplay`, список из `GET /api/gameplay`), в CLI `--gameplay`,
   в API — поле `gameplay_preset`. **Авто-подбора** «под настроение стрима» нет —
   пользователь выбирает пресет вручную.

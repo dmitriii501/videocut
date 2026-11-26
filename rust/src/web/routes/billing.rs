@@ -22,7 +22,7 @@ pub fn available_packages() -> Vec<PricingPackage> {
             credits: 20,
             price_rub: 490,
             is_popular: false,
-            description: "20 вирусных рилсов (24.5 ₽ за штуку). Хватит на 2-3 насыщенных стрима.".to_string(),
+            description: "20 клипов, 24.5 ₽ за штуку.".to_string(),
         },
         PricingPackage {
             id: "pack_streamer".to_string(),
@@ -30,7 +30,7 @@ pub fn available_packages() -> Vec<PricingPackage> {
             credits: 60,
             price_rub: 1190,
             is_popular: true,
-            description: "60 сочных роликов (19.8 ₽ за штуку). Самый популярный тариф среди постоянных стримеров.".to_string(),
+            description: "60 клипов, 19.8 ₽ за штуку.".to_string(),
         },
         PricingPackage {
             id: "pack_pro".to_string(),
@@ -38,7 +38,7 @@ pub fn available_packages() -> Vec<PricingPackage> {
             credits: 150,
             price_rub: 2490,
             is_popular: false,
-            description: "150 рилсов (16.6 ₽ за штуку) + Приоритет в очереди и безлимитный Live-мониторинг.".to_string(),
+            description: "150 клипов, 16.6 ₽ за штуку.".to_string(),
         },
     ]
 }

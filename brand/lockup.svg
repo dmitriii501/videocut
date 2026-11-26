@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 88" fill="none" role="img" aria-label="ЧИК">
+  <g>
+    <rect width="88" height="88" rx="22" fill="#FF4D1C"/>
+    <g stroke="#F7F4EF" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="30.6" cy="63.9" r="8.4"/>
+      <circle cx="57.4" cy="63.9" r="8.4"/>
+      <path d="M36.3 57.2 44 46.2 24.5 18.2"/>
+      <path d="M51.7 57.2 44 46.2 63.5 18.2"/>
+    </g>
+    <circle cx="44" cy="46.2" r="3.2" fill="#F7F4EF"/>
+  </g>
+  <text x="112" y="58" fill="#14151A" font-family="Noto Sans, sans-serif" font-size="52" font-weight="800" letter-spacing="-1.6">ЧИК</text>
+  <text x="230" y="58" fill="#FF4D1C" font-family="Noto Sans, sans-serif" font-size="22" font-weight="700" letter-spacing="1.4">CHIK</text>
+</svg>

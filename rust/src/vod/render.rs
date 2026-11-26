@@ -3,7 +3,7 @@
 //! streamer webcam below, burned-in ASS subtitles. Video -> H.264, audio ->
 //! AAC, muxed to MP4.
 //!
-//! Layout (default 720x1280, 9:16):
+//! Layout (default 1080x1920, 9:16):
 //!   TOP    (50%) = full stream frame, letterboxed on a blurred fill.
 //!   BOTTOM (50%) = gameplay strip if requested, else the streamer webcam
 //!                  panel cropped to the band and scaled up.
@@ -16,7 +16,7 @@ use ffmpeg::{codec, format, frame, media, Dictionary, Rational, Rescale};
 use std::path::{Path, PathBuf};
 
 use crate::config;
-use crate::utils::{ensure_dir, has_audio, log, video_size};
+use crate::utils::{ensure_dir, has_audio, log, short_hash, video_size};
 use crate::vod::webcam::{Panel, DEFAULT_PANEL};
 
 #[derive(Debug, Clone, Copy)]
@@ -124,45 +124,95 @@ fn banner_overlay_asset(lay: Layout) -> Option<PathBuf> {
         return None;
     }
     let font = resolve_banner_font()?;
+    let site_raw = config::banner_site();
     let dir = config::cache().join("assets");
     ensure_dir(&dir).ok()?;
     let path = dir.join(format!(
-        "banner-{}x{}-{:.2}.mov",
-        lay.width, lay.height, dur
+        "banner-v2-{}x{}-{:.2}-{}.mov",
+        lay.width,
+        lay.height,
+        dur,
+        &short_hash(&site_raw)[..8]
     ));
     if path.exists() && path.metadata().map(|m| m.len() > 0).unwrap_or(false) {
         return Some(path);
     }
 
-    let ratio = lay.width as f64 / 720.0;
-    let fs1 = (110.0 * ratio).round() as u32;
-    let fs2 = (42.0 * ratio).round() as u32;
-    let fs3 = (64.0 * ratio).round() as u32;
-    let dy1 = (160.0 * ratio).round() as i32;
-    let dy2 = (20.0 * ratio).round() as i32;
-    let dy3 = (130.0 * ratio).round() as i32;
+    // Sizes are tuned on a 1080-wide reel and scale with the canvas.
+    let s = lay.width as f64 / 1080.0;
+    let bar = (150.0 * s).round().max(48.0) as i32;
+    let inset = (36.0 * s).round() as i32;
+    let arm = (72.0 * s).round() as i32;
+    let thick = (8.0 * s).round().max(3.0) as i32;
+    let gap = (24.0 * s).round() as i32;
+    let fs_mark = (280.0 * s).round() as u32;
+    let fs_sub = (52.0 * s).round() as u32;
+    let fs_top = (64.0 * s).round() as u32;
+    let fs_site = (54.0 * s).round() as u32;
+    let rule_h = (10.0 * s).round().max(3.0) as i32;
+    let rule_above = (300.0 * s).round() as i32;
+    let rule_below = (250.0 * s).round() as i32;
+    let sub_dy = (150.0 * s).round() as i32;
+    let top_ty = (46.0 * s).round() as i32;
+    let bot_pad = (112.0 * s).round() as i32;
+    let w = lay.width as i32;
+    let h = lay.height as i32;
+    let y_top = bar + gap;
+    let y_bot_v = h - bar - gap - arm;
+    let y_bot_h = h - bar - gap - thick;
+    let x_r_v = w - inset - thick;
+    let x_r_h = w - inset - arm;
     let font_s = escape_drawtext(&font.to_string_lossy());
-    let site = escape_drawtext(&config::banner_site());
-    let fade_out = (dur - 0.4).max(0.0);
+    let site = escape_drawtext(&site_raw);
+    let fade_out_d = 0.32_f64.min(dur / 4.0);
+    let fade_in = 0.22_f64.min(dur / 4.0);
+    let fade_out = (dur - fade_out_d).max(0.0);
 
     let vf = format!(
         "format=rgba,\
-         drawbox=x=0:y=0:w=iw:h=ih:color=0x090A0D@0.82:t=fill,\
-         drawbox=x=0:y=ih-28:w='iw*min(t/{dur}\\,1)':h=8:color=0xFF5500@0.95:t=fill,\
-         drawtext=fontfile='{font}':text='ЧИК • CHIK':fontcolor=0xEDEDED:fontsize={fs1}:x=(w-text_w)/2:y=(h/2)-{dy1},\
-         drawtext=fontfile='{font}':text='Автопилот вирусных нарезок':fontcolor=0x8A92A6:fontsize={fs2}:x=(w-text_w)/2:y=(h/2)+{dy2},\
-         drawtext=fontfile='{font}':text='{site}':fontcolor=0xFF5500:fontsize={fs3}:x=(w-text_w)/2:y=(h/2)+{dy3},\
-         fade=t=in:st=0:d=0.4:alpha=1,fade=t=out:st={fade_out}:d=0.4:alpha=1",
-        dur = dur,
+         drawbox=x=0:y=0:w=iw:h=ih:color=0x090A0D@0.88:t=fill,\
+         drawbox=x=0:y=0:w=iw:h='{bar}*min(1\\,t/0.28)':color=0xFF5500:t=fill,\
+         drawbox=x=0:y='ih-{bar}*min(1\\,t/0.28)':w=iw:h='{bar}*min(1\\,t/0.28)+1':color=0xFF5500:t=fill,\
+         drawbox=x={inset}:y={y_top}:w={arm}:h={thick}:color=0xFF5500:t=fill,\
+         drawbox=x={inset}:y={y_top}:w={thick}:h={arm}:color=0xFF5500:t=fill,\
+         drawbox=x={x_r_h}:y={y_top}:w={arm}:h={thick}:color=0xFF5500:t=fill,\
+         drawbox=x={x_r_v}:y={y_top}:w={thick}:h={arm}:color=0xFF5500:t=fill,\
+         drawbox=x={inset}:y={y_bot_v}:w={thick}:h={arm}:color=0xFF5500:t=fill,\
+         drawbox=x={inset}:y={y_bot_h}:w={arm}:h={thick}:color=0xFF5500:t=fill,\
+         drawbox=x={x_r_v}:y={y_bot_v}:w={thick}:h={arm}:color=0xFF5500:t=fill,\
+         drawbox=x={x_r_h}:y={y_bot_h}:w={arm}:h={thick}:color=0xFF5500:t=fill,\
+         drawbox=x='(iw-iw*0.72*min(1\\,max(0\\,(t-0.18)/0.32)))/2':y='ih/2-{rule_above}':w='iw*0.72*min(1\\,max(0\\,(t-0.18)/0.32))':h={rule_h}:color=0xFF5500:t=fill,\
+         drawbox=x='(iw-iw*0.72*min(1\\,max(0\\,(t-0.18)/0.32)))/2':y='ih/2+{rule_below}':w='iw*0.72*min(1\\,max(0\\,(t-0.18)/0.32))':h={rule_h}:color=0xFF5500:t=fill,\
+         drawbox=enable='lt(t\\,0.55)':x=0:y='(ih-{bar})*min(t/0.45\\,1)':w=iw:h={thick}:color=0xF4F1EA@0.95:t=fill,\
+         drawtext=fontfile='{font}':text='ЧИК':fontcolor=0xF4F1EA:fontsize={fs_mark}:x=(w-text_w)/2:y=(h-text_h)/2-30,\
+         drawtext=fontfile='{font}':text='РЕЖЕТ СТРИМ':fontcolor=0xFF5500:fontsize={fs_sub}:x=(w-text_w)/2:y=(h/2)+{sub_dy},\
+         drawtext=fontfile='{font}':text='CHIK':fontcolor=0x090A0D:fontsize={fs_top}:x=(w-text_w)/2:y={top_ty},\
+         drawtext=fontfile='{font}':text='{site}':fontcolor=0x090A0D:fontsize={fs_site}:x=(w-text_w)/2:y=h-{bot_pad},\
+         fade=t=in:st=0:d={fade_in}:alpha=1,fade=t=out:st={fade_out}:d={fade_out_d}:alpha=1",
+        bar = bar,
+        inset = inset,
+        y_top = y_top,
+        arm = arm,
+        thick = thick,
+        x_r_h = x_r_h,
+        x_r_v = x_r_v,
+        y_bot_v = y_bot_v,
+        y_bot_h = y_bot_h,
+        rule_above = rule_above,
+        rule_below = rule_below,
+        rule_h = rule_h,
         font = font_s,
-        fs1 = fs1,
-        fs2 = fs2,
-        fs3 = fs3,
-        dy1 = dy1,
-        dy2 = dy2,
-        dy3 = dy3,
+        fs_mark = fs_mark,
+        fs_sub = fs_sub,
+        sub_dy = sub_dy,
+        fs_top = fs_top,
+        top_ty = top_ty,
         site = site,
+        fs_site = fs_site,
+        bot_pad = bot_pad,
+        fade_in = fade_in,
         fade_out = fade_out,
+        fade_out_d = fade_out_d,
     );
 
     let src = format!(

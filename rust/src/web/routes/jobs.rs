@@ -8,6 +8,7 @@ use axum::Json;
 use chrono::Utc;
 use uuid::Uuid;
 
+use crate::vod::webcam;
 use crate::web::models::{CreateJobRequest, Job};
 use crate::web::queue::JobTask;
 use crate::web::routes::auth::extract_user;
@@ -63,6 +64,29 @@ pub async fn create_job(
         payload.mode.clone()
     };
 
+    let webcam_spec = match payload
+        .webcam
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some(spec) => match webcam::parse_manual(spec) {
+            Ok(panel) => {
+                let (x0, y0, x1, y1) = panel.as_tuple();
+                Some(format!("{x0:.4},{y0:.4},{x1:.4},{y1:.4}"))
+            }
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({
+                        "error": "Рамка вебки: четыре числа от 0 до 1, зона не слишком мелкая"
+                    })),
+                );
+            }
+        },
+        None => None,
+    };
+
     let job_id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
@@ -94,6 +118,7 @@ pub async fn create_job(
         job: job.clone(),
         count: payload.count.max(1),
         banner: payload.banner,
+        webcam_spec,
         should_stop,
     };
 

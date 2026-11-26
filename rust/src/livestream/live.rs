@@ -20,8 +20,11 @@ use std::time::{Duration, Instant};
 
 use crate::utils::{ensure_dir, log, run, run_out};
 
-/// Quality selector for the live stream (720p60 is plenty for a 720x1280 reel).
-const LIVE_FORMAT: &str = "best[height<=720]/best";
+/// Quality selector for the live stream. Caps at the same height as VOD downloads
+/// (`MAX_SOURCE_HEIGHT`, default 1080) so a 1080×1920 reel is not fed a 720p stream.
+fn live_format() -> String {
+    format!("best[height<={}]/best", crate::config::max_source_height())
+}
 
 /// Upper bound on continuous evidence fed into the fused hype score.
 const MAX_EVIDENCE: f64 = 4.0;
@@ -106,7 +109,10 @@ pub fn channel_from_url(url: &str) -> String {
 pub fn resolve_live_url(url: &str) -> Result<String> {
     log(format!("resolving live stream: {url}"));
     let mut cmd = Command::new(ytdlp_bin());
-    cmd.args(["-g", "-f", LIVE_FORMAT, "--no-warnings"]).arg(url);
+    cmd.args(["-g", "-f"])
+        .arg(live_format())
+        .arg("--no-warnings")
+        .arg(url);
     let out = run_out(&mut cmd)?;
     let m3u8 = out
         .lines()
