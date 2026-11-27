@@ -112,7 +112,16 @@ pub fn whisper_lang() -> Option<String> {
 }
 
 pub fn whisper_threads() -> i32 {
-    env_parse("WHISPER_THREADS", 4)
+    let default: i32 = std::thread::available_parallelism()
+        .map(|n| n.get() as i32)
+        .unwrap_or(4);
+    env_parse("WHISPER_THREADS", default)
+}
+
+/// Beam size for decoding. `1` (default) uses fast greedy decoding; set higher
+/// for slower but slightly more accurate beam search.
+pub fn whisper_beam() -> i32 {
+    env_parse("STREAMREELS_WHISPER_BEAM", 1).max(1)
 }
 
 /// How many whisper runs may execute simultaneously (RAM bound). The model is
@@ -252,6 +261,21 @@ pub fn public_url() -> String {
 /// Without them the service falls back to a local demo top-up.
 pub fn tbank_enabled() -> bool {
     tbank_terminal_key().is_some() && tbank_password().is_some()
+}
+
+/// Whether the no-acquiring demo top-up is allowed at all. Off by default so a
+/// deployment without payment keys cannot hand out free credits (the paywall
+/// would otherwise be meaningless). Opt in with `STREAMREELS_DEMO_TOPUP=true`
+/// for local testing.
+pub fn demo_topup_enabled() -> bool {
+    matches!(
+        std::env::var("STREAMREELS_DEMO_TOPUP")
+            .unwrap_or_default()
+            .trim()
+            .to_lowercase()
+            .as_str(),
+        "1" | "true" | "yes" | "on"
+    )
 }
 
 /// Maximum balance the demo (no-acquiring) top-up will grant. Prevents the

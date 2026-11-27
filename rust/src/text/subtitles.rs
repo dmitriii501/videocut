@@ -220,10 +220,19 @@ pub fn transcribe_audio(audio: &[f32], language: Option<&str>, offset: f64) -> R
     ));
     let mut state = ctx.create_state().map_err(|e| anyhow!("whisper state: {e}"))?;
 
-    let mut params = FullParams::new(SamplingStrategy::BeamSearch {
-        beam_size: 5,
-        patience: -1.0,
-    });
+    // Greedy decoding: ~3-5x faster than beam-5 on CPU with negligible quality
+    // loss for short highlight windows. Set `STREAMREELS_WHISPER_BEAM`>1 to opt
+    // back into beam search if quality matters more than speed.
+    let beam = config::whisper_beam();
+    let strategy = if beam > 1 {
+        SamplingStrategy::BeamSearch {
+            beam_size: beam,
+            patience: -1.0,
+        }
+    } else {
+        SamplingStrategy::Greedy { best_of: 1 }
+    };
+    let mut params = FullParams::new(strategy);
     params.set_n_threads(config::whisper_threads());
     let lang = language.map(str::to_string).or_else(config::whisper_lang);
     params.set_language(lang.as_deref());

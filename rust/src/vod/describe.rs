@@ -86,6 +86,103 @@ fn junk_set() -> &'static HashSet<&'static str> {
     SET.get_or_init(|| JUNK.iter().copied().collect())
 }
 
+/// Substrings that betray a whisper-hallucinated link glued into one token, e.g.
+/// `httpwwwtwitchtvxqcclipRudeHomelyYogurtDatBoi...`. Exact-match `JUNK` misses
+/// these because the whole URL becomes a single word with no separators.
+const URL_MARKERS: &[&str] = &[
+    "http", "www", "twitch", "youtube", "youtu", "tiktok", "instagram", "telegram", "discord",
+    "clip", "gmail",
+];
+
+/// True for tokens that are really a mashed-up URL / whisper noise rather than a
+/// real word: contains a platform/URL marker as a substring, is absurdly long for
+/// a word, or carries heavy internal camel-case (hallucinated gibberish).
+fn is_gibberish(w: &str) -> bool {
+    let len = w.chars().count();
+    if len > 24 {
+        return true;
+    }
+    let lower = w.to_lowercase();
+    if URL_MARKERS.iter().any(|m| lower.contains(m)) {
+        return true;
+    }
+    let uppers = w.chars().filter(|c| c.is_uppercase()).count();
+    len >= 10 && uppers >= 3
+}
+
+/// Greeting / channel-filler words that make a useless title on their own.
+const GREETING: &[&str] = &[
+    "здравствуйте",
+    "здравствуй",
+    "привет",
+    "приветствую",
+    "приветик",
+    "хай",
+    "хеллоу",
+    "hello",
+    "hi",
+    "hey",
+    "добрый",
+    "доброе",
+    "доброго",
+    "день",
+    "вечер",
+    "утро",
+    "всем",
+    "ребята",
+    "друзья",
+    "народ",
+    "чат",
+    "welcome",
+];
+
+fn greeting_set() -> &'static HashSet<&'static str> {
+    static SET: OnceLock<HashSet<&'static str>> = OnceLock::new();
+    SET.get_or_init(|| GREETING.iter().copied().collect())
+}
+
+/// Sentence made up only of greetings and stopwords ("Здравствуйте!", "Всем
+/// привет") — never a good title or the opening of a description.
+fn is_filler(s: &str) -> bool {
+    let lower = s.to_lowercase();
+    let stop = stop_set();
+    let greet = greeting_set();
+    let words: Vec<&str> = lower
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect();
+    if words.is_empty() {
+        return true;
+    }
+    words
+        .iter()
+        .all(|w| greet.contains(*w) || stop.contains(*w))
+}
+
+/// Weak sentence openers (prepositions / conjunctions) that mark a spoken
+/// fragment like "в микрофон" rather than a self-contained thought.
+const WEAK_OPENERS: &[&str] = &[
+    "в", "во", "на", "с", "со", "к", "у", "о", "об", "из", "от", "до", "по", "за", "для",
+    "при", "про", "над", "под", "без", "через", "между", "а", "и", "но", "ну", "ах", "ох",
+    "эх", "вот",
+];
+
+/// A short fragment that starts with a preposition/conjunction and reads as
+/// broken speech rather than a complete sentence.
+fn is_fragment(s: &str) -> bool {
+    if s.chars().count() >= 20 {
+        return false;
+    }
+    let lower = s.to_lowercase();
+    let first = lower
+        .split(|c: char| !c.is_alphanumeric())
+        .find(|w| !w.is_empty());
+    match first {
+        Some(w) => WEAK_OPENERS.contains(&w),
+        None => true,
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Script {
     Cyrillic,
@@ -205,12 +302,21 @@ fn hashtags(text: &str, limit: usize) -> Vec<String> {
     let mut seen: Vec<String> = Vec::new();
     let stop = stop_set();
     let junk = junk_set();
-    let want = dominant_script(text);
     let text = strip_urls(text);
+    // Dominant script must ignore hallucinated URL gibberish: one long Latin
+    // token ("httpwwwtwitch...") must not flip an otherwise-Cyrillic clip.
+    let clean_for_script: String = text
+        .split_whitespace()
+        .filter(|w| !is_gibberish(w))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let want = dominant_script(&clean_for_script);
     for m in word_re().find_iter(&text.to_lowercase()) {
         let w = m.as_str();
         if stop.contains(w)
             || junk.contains(w)
+            || greeting_set().contains(w)
+            || is_gibberish(w)
             || seen.iter().any(|s| s == w)
             || !w.chars().any(|c| c.is_alphabetic())
         {
@@ -235,19 +341,24 @@ fn short_title(text: &str, limit: usize) -> String {
     let text = strip_urls(text);
     let want = dominant_script(&text);
     let sents = sentences(&text);
-    let pick = |min: usize| -> Option<String> {
+    let pick = |min: usize, strict: bool| -> Option<String> {
         sents
             .iter()
             .map(|s| s.trim_matches(|c| matches!(c, ' ' | '.' | ',' | '!' | '…' | '-')))
             .find(|s| {
                 s.chars().count() >= min
                     && meaningful(s)
+                    && !is_filler(s)
+                    && (!strict || !is_fragment(s))
                     && want.map(|w| has_script(s, w)).unwrap_or(true)
             })
             .map(|s| s.to_string())
     };
-    let cand = pick(12)
-        .or_else(|| pick(6))
+    // Prefer a substantive sentence (not a greeting/fragment); relax the rules
+    // only if nothing qualifies so we still produce *something* usable.
+    let cand = pick(12, true)
+        .or_else(|| pick(12, false))
+        .or_else(|| pick(6, false))
         .unwrap_or_else(|| text.trim().to_string());
     if cand.is_empty() {
         return String::new();
@@ -265,8 +376,13 @@ fn heuristic(transcript: &str, channel: &str) -> Description {
         "Момент со стрима.".to_string()
     } else {
         let raw: String = text.chars().take(config::describe_desc_max()).collect();
-        // Cut at the last complete sentence so the description never ends mid-word.
-        match sentences(&raw) {
+        // Drop greeting/filler openers, then cut at the last complete sentence so
+        // the description neither starts with "Здравствуйте!" nor ends mid-word.
+        let mut sents = sentences(&raw);
+        while sents.len() > 1 && (is_filler(&sents[0]) || is_fragment(&sents[0])) {
+            sents.remove(0);
+        }
+        match sents {
             mut s if s.len() > 1 => {
                 s.pop();
                 s.join(" ")
@@ -474,6 +590,53 @@ mod tests {
     }
 
     #[test]
+    fn hashtags_drop_glued_url_gibberish() {
+        // A real whisper hallucination: the whole URL becomes one token.
+        let tags = hashtags(
+            "микрофон очень взволнована httpwwwtwitchtvxqcclipRudeHomelyYogurtDatBoiSkoigoy катка разносим",
+            8,
+        );
+        assert!(
+            !tags.iter().any(|t| t.to_lowercase().contains("http") || t.to_lowercase().contains("twitch")),
+            "got {tags:?}"
+        );
+        assert!(tags.iter().any(|t| t == "#катка"), "got {tags:?}");
+    }
+
+    #[test]
+    fn short_title_skips_greeting_opener() {
+        let t = short_title("Здравствуйте! Так что я очень взволнована. Приятно, что вы здесь!", 70);
+        assert!(!t.to_lowercase().contains("здравствуйте"), "got {t:?}");
+        assert!(t.to_lowercase().contains("взволнована") || t.to_lowercase().contains("приятно"), "got {t:?}");
+    }
+
+    #[test]
+    fn short_title_skips_weak_fragment_opener() {
+        let t = short_title("в микрофон. Сегодня разносим лобби в финале турнира", 70);
+        assert!(!t.to_lowercase().starts_with("в микрофон"), "got {t:?}");
+        assert!(t.to_lowercase().contains("разносим"), "got {t:?}");
+    }
+
+    #[test]
+    fn description_drops_greeting_opening() {
+        let d = heuristic("Здравствуйте! Так что я очень взволнована. Приятно, что вы здесь!", "ch");
+        assert!(!d.description.to_lowercase().starts_with("здравствуйте"), "got {:?}", d.description);
+    }
+
+    #[test]
+    fn p1_real_transcript_regression() {
+        // Exact transcript from the user's reported reel.
+        let t = "в микрофон. Здравствуйте! Так что я очень взволнована. Приятно, что вы здесь! Ах, конечно, кто?";
+        let d = heuristic(t, "xqc");
+        assert!(!d.title.to_lowercase().contains("здравствуйте"), "title={:?}", d.title);
+        assert!(!d.description.to_lowercase().starts_with("в микрофон"), "desc={:?}", d.description);
+        assert!(!d.description.to_lowercase().starts_with("здравствуйте"), "desc={:?}", d.description);
+        let tags = d.hashtags.join(" ");
+        assert!(!tags.to_lowercase().contains("http"), "tags={:?}", tags);
+        assert!(!tags.to_lowercase().contains("twitchtv"), "tags={:?}", tags);
+    }
+
+    #[test]
     fn caption_truncates() {
         let d = Description {
             title: "T".into(),
@@ -485,3 +648,5 @@ mod tests {
         assert!(c.ends_with('…'));
     }
 }
+
+

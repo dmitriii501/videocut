@@ -84,6 +84,15 @@ pub async fn topup(
 
     // --- Dev fallback: no acquiring keys configured ---
     if !config::tbank_enabled() {
+        // Free credits are opt-in only; otherwise the paywall is a no-op.
+        if !config::demo_topup_enabled() {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "error": "Платежи временно недоступны. Пополнение отключено.",
+                })),
+            );
+        }
         let cap = config::demo_credit_cap();
         if cap > 0 && user.credits >= cap {
             return (
