@@ -90,17 +90,57 @@ pub fn clip_for(spec: &str) -> Result<Option<PathBuf>> {
     if Path::new(spec).is_file() {
         return Ok(Some(PathBuf::from(spec)));
     }
-    if let Some(query) = spec.strip_prefix("query:") {
-        let key = format!("q-{}", short_hash(query));
-        return Ok(Some(ensure_clip(&key, query)?));
-    }
-    match PRESETS.iter().find(|p| p.key == spec) {
-        Some(preset) => Ok(Some(ensure_clip(preset.key, preset.query)?)),
-        None => {
-            let keys: Vec<&str> = PRESETS.iter().map(Preset::key).collect();
-            bail!("unknown gameplay preset {spec:?} (use one of {keys:?} or a file path)")
+    let resolved = if let Some(query) = spec.strip_prefix("query:") {
+        ensure_clip(&format!("q-{}", short_hash(query)), query)
+    } else {
+        match PRESETS.iter().find(|p| p.key == spec) {
+            Some(preset) => ensure_clip(preset.key, preset.query),
+            None => {
+                let keys: Vec<&str> = PRESETS.iter().map(Preset::key).collect();
+                bail!("unknown gameplay preset {spec:?} (use one of {keys:?} or a file path)")
+            }
+        }
+    };
+    match resolved {
+        Ok(clip) => Ok(Some(clip)),
+        Err(exc) => {
+            // Download can fail on YouTube bot-checks. Rather than silently
+            // dropping to a webcam-only band, reuse ANY cached gameplay clip so
+            // the reel still gets a gameplay background.
+            if let Some(clip) = any_cached_clip() {
+                log(format!(
+                    "gameplay: download for {spec:?} failed ({exc}); reusing cached {}",
+                    clip.display()
+                ));
+                Ok(Some(clip))
+            } else {
+                Err(exc)
+            }
         }
     }
+}
+
+/// Longest cached gameplay clip from any preset/query, ignoring the key.
+fn any_cached_clip() -> Option<PathBuf> {
+    let dir = gameplay_dir();
+    let min = config::gameplay_min_seconds();
+    let mut best: Option<(f64, PathBuf)> = None;
+    for entry in std::fs::read_dir(&dir).ok()?.flatten() {
+        let path = entry.path();
+        let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+        // Skip derived strips; we want a source clip to build from.
+        if !name.ends_with(".mp4") || name.starts_with("strip-") {
+            continue;
+        }
+        let dur = duration(&path);
+        if dur < min {
+            continue;
+        }
+        if best.as_ref().map(|(d, _)| dur > *d).unwrap_or(true) {
+            best = Some((dur, path));
+        }
+    }
+    best.map(|(_, p)| p)
 }
 
 fn gameplay_dir() -> PathBuf {

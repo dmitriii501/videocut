@@ -84,7 +84,32 @@ pub async fn topup(
 
     // --- Dev fallback: no acquiring keys configured ---
     if !config::tbank_enabled() {
-        let new_credits = match state.db.update_credits(&user.id, pack.credits) {
+        let cap = config::demo_credit_cap();
+        if cap > 0 && user.credits >= cap {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(serde_json::json!({
+                    "error": format!("Демо-лимит: максимум {cap} кредитов. Настройте платежи для покупки пакетов."),
+                    "credits": user.credits,
+                })),
+            );
+        }
+        // Never exceed the cap even if this pack would push past it.
+        let grant = if cap > 0 {
+            pack.credits.min((cap - user.credits).max(0))
+        } else {
+            pack.credits
+        };
+        if grant <= 0 {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(serde_json::json!({
+                    "error": format!("Демо-лимит: максимум {cap} кредитов."),
+                    "credits": user.credits,
+                })),
+            );
+        }
+        let new_credits = match state.db.update_credits(&user.id, grant) {
             Ok(c) => c,
             Err(e) => {
                 return (
@@ -102,7 +127,7 @@ pub async fn topup(
             Json(serde_json::json!({
                 "success": true,
                 "demo": true,
-                "message": format!("Пакет '{}' активирован! Начислено +{} кредитов.", pack.name, pack.credits),
+                "message": format!("Пакет '{}' активирован! Начислено +{} кредитов.", pack.name, grant),
                 "credits": new_credits,
             })),
         );

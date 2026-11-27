@@ -47,6 +47,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/auth/logout", post(auth::logout))
         .route("/api/gameplay", get(gameplay::list_presets))
         .route("/api/webcam", get(webcam::defaults))
+        .route("/api/webcam/preview", post(webcam::preview))
         .route("/api/jobs", post(jobs::create_job).get(jobs::list_jobs))
         .route("/api/jobs/{id}", get(jobs::get_job))
         .route("/api/jobs/{id}/stop", post(jobs::stop_job))

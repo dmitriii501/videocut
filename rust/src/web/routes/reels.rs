@@ -1,5 +1,6 @@
 use std::io::{Read, Seek, SeekFrom};
-use std::path::PathBuf;
+use std::path::{Path as FsPath, PathBuf};
+use std::process::Command;
 
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
@@ -8,9 +9,13 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::Deserialize;
 
+use crate::utils::log;
 use crate::web::models::{UnlockReelRequest, WebEvent};
 use crate::web::routes::auth::{extract_user, extract_user_q};
 use crate::web::AppState;
+
+/// Seconds of a locked reel that are safe to expose as a preview/thumbnail.
+const PREVIEW_SECS: u32 = 3;
 
 #[derive(Debug, Deserialize)]
 pub struct VideoQuery {
@@ -164,10 +169,24 @@ pub async fn stream_video(
         }
     };
 
-    let file_path = PathBuf::from(&reel.file_path);
-    if !file_path.exists() {
+    let full_path = PathBuf::from(&reel.file_path);
+    if !full_path.exists() {
         return (StatusCode::NOT_FOUND, "Video file missing on disk").into_response();
     }
+
+    // Locked reels must not stream the full paid file (a direct URL would be a
+    // free download). Serve a short cached preview instead; unlocking swaps in
+    // the real file on the next request.
+    let file_path = if reel.is_unlocked {
+        full_path.clone()
+    } else {
+        match preview_clip(&full_path) {
+            Some(p) => p,
+            None => {
+                return (StatusCode::FORBIDDEN, "Разблокируйте ролик, чтобы смотреть целиком").into_response();
+            }
+        }
+    };
 
     let mut file = match std::fs::File::open(&file_path) {
         Ok(f) => f,
@@ -226,5 +245,50 @@ pub async fn stream_video(
             .body(Body::from(data))
             .unwrap(),
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Read error").into_response(),
+    }
+}
+
+/// Return a short, cached preview of `source` (first `PREVIEW_SECS` seconds),
+/// used to render locked-reel thumbnails without exposing the paid file.
+fn preview_clip(source: &FsPath) -> Option<PathBuf> {
+    let meta = std::fs::metadata(source).ok()?;
+    let out = source.with_file_name(format!(
+        ".preview-{}-{}.mp4",
+        PREVIEW_SECS,
+        meta.len()
+    ));
+    if out.exists() && std::fs::metadata(&out).map(|m| m.len() > 0).unwrap_or(false) {
+        return Some(out);
+    }
+    // Re-encode just the opening seconds; `-an` keeps it tiny (thumbnail only).
+    let status = Command::new("ffmpeg")
+        .args(["-y", "-hide_banner", "-loglevel", "error"])
+        .arg("-i")
+        .arg(source)
+        .args([
+            "-t",
+            &PREVIEW_SECS.to_string(),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-crf",
+            "30",
+            "-movflags",
+            "+faststart",
+        ])
+        .arg(&out)
+        .status();
+    match status {
+        Ok(s) if s.success() => Some(out),
+        Ok(s) => {
+            log(format!("preview: ffmpeg failed ({s}) for {}", source.display()));
+            None
+        }
+        Err(e) => {
+            log(format!("preview: cannot run ffmpeg ({e})"));
+            None
+        }
     }
 }

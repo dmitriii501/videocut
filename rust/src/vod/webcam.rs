@@ -331,6 +331,22 @@ pub fn detect_panel_window(source: &Path, start: f64, dur: f64) -> Panel {
     panel
 }
 
+/// Detect the face panel from a single already-grabbed JPEG frame.
+///
+/// Returns `None` when no TypeSafe key is configured or the model finds no
+/// plausible face. Used by the studio preview so the operator sees the same
+/// box the render would pick before starting a job.
+pub fn detect_from_jpeg(img: &[u8]) -> Option<Panel> {
+    let key = config::typesafe_api_key()?;
+    let b = match retry(|| ask_box(&key, img), 3, 1.5, "typesafe preview box") {
+        Ok(Some(b)) if plausible(b) => b,
+        _ => return None,
+    };
+    let panel = Panel::with_source(expand_face_box(b), "face");
+    log(format!("preview face panel: {:?}", panel.as_tuple()));
+    Some(panel)
+}
+
 /// Detect the streamer face panel for a whole source, cached.
 pub fn detect_panel(source: &Path) -> Panel {
     let _ = ensure_dir(&config::panels());

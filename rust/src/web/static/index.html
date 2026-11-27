@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ЧИК / CHIK ✂️ — Автопилот вирусных нарезок</title>
+  <title>ЧИК — вирусные нарезки из стримов</title>
   
   <!-- Distinctive Typography: Syne (Brutalist Industrial) + Space Mono (Hardware Telemetry) + Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,8 +22,8 @@
               dark: '#101217',           // Gunmetal Dark
               surface: '#151820',        // Machined Surface
               card: '#1C202B',           // Pocket Operator Component
-              border: '#2A3040',         // Precision Hairline
-              borderLight: '#3D455C',    // Active Boundary
+              border: '#2A3040',         // Precision Hairline (decorative dividers)
+              borderLight: '#5A6478',    // Active Boundary (>=3:1 UI contrast)
               orange: '#FF5500',         // Teenage Engineering Safety Orange
               orangeHover: '#FF6E26',
               coral: '#FF3856',          // REC Indicator
@@ -57,6 +57,55 @@
         radial-gradient(at 0% 0%, rgba(255, 85, 0, 0.05) 0px, transparent 45%),
         radial-gradient(at 100% 100%, rgba(255, 85, 0, 0.02) 0px, transparent 50%);
       background-size: 26px 26px, 100% 100%, 100% 100%;
+    }
+
+    /* Keep anchored/scroll target clear of the sticky header. */
+    html { scroll-padding-top: 6rem; }
+
+    /* Visible, high-contrast keyboard focus on every interactive element.
+       Mouse users keep the original look via :focus-visible. */
+    :focus-visible {
+      outline: 3px solid #FF7A33;
+      outline-offset: 2px;
+      border-radius: 1px;
+    }
+
+    /* Screen-reader-only helper. */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Skip link: hidden until focused (WCAG 2.4.1 bypass blocks). */
+    .skip-link {
+      position: absolute;
+      left: 0.75rem;
+      top: -100px;
+      z-index: 100;
+      background: #FF5500;
+      color: #090A0D;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 1rem;
+      transition: top 0.15s ease;
+    }
+    .skip-link:focus { top: 0.75rem; }
+
+    /* Respect users who ask for reduced motion (WCAG 2.3.3). */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
     }
 
     /* Crosshair Crop Markers */
@@ -109,68 +158,70 @@
     .eq-bar:nth-child(5) { animation: eq 0.7s infinite ease-in-out 0.3s; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-chik-orange selection:text-white antialiased">
+<body class="min-h-screen flex flex-col font-sans selection:bg-chik-orange selection:text-chik-black antialiased">
+
+  <a href="#main-content" class="skip-link">Перейти к содержимому</a>
+
+  <!-- Announce dynamic status to screen readers -->
+  <div id="sr-live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <!-- NAVBAR -->
   <header class="border-b border-chik-border bg-chik-black/95 backdrop-blur-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
       
-      <!-- Brand Logo: CHIK / ЧИК in Safety Orange -->
-      <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchView('landing')">
-        <div class="relative w-11 h-11 bg-chik-orange text-white flex items-center justify-center font-mono font-black text-2xl border border-chik-orange shadow-lg glow-orange-sm transition duration-300 group-hover:bg-white group-hover:text-black" id="scissor-icon">
-          ✂
-        </div>
-        <div>
-          <div class="flex items-baseline space-x-2">
-            <span class="font-display font-black text-3xl tracking-tight text-white uppercase group-hover:text-chik-orange transition">ЧИК</span>
-            <span class="font-mono text-xs font-bold text-chik-orange tracking-widest">[CHIK]</span>
-          </div>
-          <p class="font-mono text-[9px] text-chik-muted uppercase tracking-wider -mt-1">автопилот вирусных нарезок</p>
-        </div>
-      </div>
+      <!-- Brand -->
+      <button type="button" class="flex items-center space-x-3 cursor-pointer group text-left" onclick="switchView('landing')" aria-label="ЧИК — на главную">
+        <span class="w-11 h-11 bg-chik-orange text-chik-black flex items-center justify-center border border-chik-orange shadow-lg glow-orange-sm transition duration-300 group-hover:bg-chik-orangeHover" aria-hidden="true">
+          <svg viewBox="0 0 32 32" class="w-6 h-6" fill="none">
+            <polygon points="9,5 9,27 28,16" fill="currentColor"/>
+            <line x1="3" y1="29" x2="31" y2="3" stroke="#FF5500" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="font-display font-black text-3xl tracking-tight text-white uppercase group-hover:text-chik-orange transition" aria-hidden="true">ЧИК</span>
+      </button>
 
       <!-- Center Industrial Navigation -->
-      <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/80 p-1 font-mono text-xs">
-        <button onclick="switchView('landing')" id="nav-landing" class="px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition">
-          [00] О сервисе
+      <nav class="hidden md:flex items-center space-x-1 border border-chik-border bg-chik-surface/80 p-1 font-mono text-xs" aria-label="Основная навигация">
+        <button type="button" onclick="switchView('landing')" id="nav-landing" aria-current="page" class="px-4 py-2 text-chik-black bg-chik-orange font-bold uppercase tracking-wider transition">
+          <span aria-hidden="true">[00]</span> О сервисе
         </button>
-        <button onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
-          [01] Студия нарезки
+        <button type="button" onclick="switchView('studio')" id="nav-studio" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          <span aria-hidden="true">[01]</span> Студия нарезки
         </button>
-        <button onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
-          [02] Мои клипы <span id="nav-reels-count" class="ml-1 text-[10px] bg-chik-black px-1.5 py-0.5 border border-chik-border text-chik-orange">0</span>
+        <button type="button" onclick="switchView('reels')" id="nav-reels" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          <span aria-hidden="true">[02]</span> Мои клипы <span id="nav-reels-count" class="ml-1 text-[10px] bg-chik-black px-1.5 py-0.5 border border-chik-border text-chik-orange" aria-label="клипов: 0">0</span>
         </button>
-        <button onclick="switchView('pricing')" id="nav-pricing" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
-          [03] Тарифы
+        <button type="button" onclick="switchView('pricing')" id="nav-pricing" class="px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition">
+          <span aria-hidden="true">[03]</span> Тарифы
         </button>
       </nav>
 
       <!-- User Deck / Credits / Auth -->
       <div class="flex items-center space-x-3">
         <div id="user-balance-box" class="hidden flex items-center space-x-2.5 bg-chik-surface border border-chik-border px-3.5 py-2 font-mono">
-          <span class="text-chik-orange text-xs">⚡</span>
-          <span id="user-credits" class="font-bold text-sm text-white">0</span>
+          <span class="text-chik-orange text-xs" aria-hidden="true">⚡</span>
+          <span id="user-credits" class="font-bold text-sm text-white" aria-label="клипов на балансе">0</span>
           <span class="text-[10px] uppercase tracking-wider text-chik-muted">клипов</span>
-          <button onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-orange text-white px-2 py-0.5 hover:bg-chik-orangeHover transition ml-1">
+          <button type="button" onclick="openTopupModal()" class="text-[10px] uppercase font-bold bg-chik-orange text-chik-black px-2 py-0.5 hover:bg-chik-orangeHover transition ml-1">
             +БАЛАНС
           </button>
-          <button onclick="switchView('studio')" class="text-[10px] uppercase font-bold bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 border border-zinc-700 transition ml-2 hidden sm:inline-block">
+          <button type="button" onclick="switchView('studio')" class="text-[10px] uppercase font-bold bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 border border-zinc-700 transition ml-2 hidden sm:inline-block">
             В СТУДИЮ ⚡
           </button>
         </div>
 
         <div id="auth-buttons" class="flex items-center space-x-2">
-          <button onclick="openAuthModal('login')" class="font-mono text-xs uppercase tracking-wider text-zinc-400 hover:text-white px-3 py-2 transition">
+          <button type="button" onclick="openAuthModal('login')" class="font-mono text-xs uppercase tracking-wider text-zinc-400 hover:text-white px-3 py-2 transition">
             Вход
           </button>
-          <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold tracking-wider text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange shadow-lg glow-orange-sm transition">
+          <button type="button" onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold tracking-wider text-chik-black bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange shadow-lg glow-orange-sm transition">
             В СТУДИЮ (5 FREE)
           </button>
         </div>
 
         <div id="user-profile-box" class="hidden flex items-center space-x-2">
           <span id="user-email-display" class="font-mono text-xs text-zinc-400 hidden xl:inline-block max-w-[130px] truncate"></span>
-          <button onclick="logout()" title="Выйти" class="font-mono text-xs text-chik-muted hover:text-chik-coral border border-chik-border hover:border-chik-coral p-2 transition">
+          <button type="button" onclick="logout()" title="Выйти" class="font-mono text-xs text-chik-muted hover:text-chik-coral border border-chik-border hover:border-chik-coral p-2 transition">
             ВЫХОД
           </button>
         </div>
@@ -180,7 +231,7 @@
   </header>
 
   <!-- MAIN VIEW CONTAINER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+  <main id="main-content" tabindex="-1" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 focus:outline-none">
 
     <!-- VIEW 0: PROMO LANDING (Clean, high-converting showcase) -->
     <section id="view-landing" class="space-y-24 py-2">
@@ -191,24 +242,24 @@
           <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tighter text-white leading-[0.92]">
             ИЗ СТРИМА — В ВИРУСНЫЙ КЛИП <br>
             <span class="text-chik-orange">ЗА 2 МИНУТЫ.</span> <br>
-            <span class="text-zinc-600 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖА.</span>
+            <span class="text-zinc-400 font-extrabold text-3xl sm:text-5xl">БЕЗ МОНТАЖА.</span>
           </h1>
 
           <p class="font-mono text-sm sm:text-base text-zinc-300 max-w-xl leading-relaxed">
-            Проходит всю запись и режет громкие моменты и реплики. Кропает спикера в 9:16, снизу ставит геймплей, жжёт караоке-субтитры. Перевод на русский — MyMemory.
+            Проходит всю запись и режет громкие моменты и реплики. Кропает спикера в 9:16, снизу ставит геймплей, жжёт караоке-субтитры. Перевод на русский — на лету.
           </p>
 
           <!-- CTAs -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 pt-2">
-            <button 
+            <button type="button" 
               onclick="switchView('studio')" 
               onmousedown="playClickSound()"
-              class="bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-lg uppercase tracking-wider px-8 py-5 border border-chik-orange transition shadow-xl glow-orange flex items-center justify-center space-x-3 group"
+              class="bg-chik-orange hover:bg-chik-orangeHover text-chik-black font-display font-black text-lg uppercase tracking-wider px-8 py-5 border border-chik-orange transition shadow-xl glow-orange flex items-center justify-center space-x-3 group"
             >
               <span>ОТКРЫТЬ СТУДИЮ НАРЕЗОК</span>
               <span class="text-xl transform group-hover:rotate-45 transition duration-300">⚡</span>
             </button>
-            <button 
+            <button type="button" 
               onclick="switchView('reels')" 
               onmousedown="playClickSound()"
               class="border border-chik-border hover:border-chik-orange text-white font-mono text-xs uppercase tracking-wider px-6 py-5 transition flex items-center justify-center space-x-2 bg-chik-surface/60"
@@ -225,7 +276,7 @@
               <div class="text-[10px] text-chik-muted uppercase">ДЛИНА КЛИПА</div>
             </div>
             <div>
-              <div class="text-white font-black text-lg">WHISPER-RS</div>
+              <div class="text-white font-black text-lg">СЛОВО В ТАКТ</div>
               <div class="text-[10px] text-chik-muted uppercase">КАРАОКЕ-САБЫ</div>
             </div>
             <div>
@@ -244,6 +295,7 @@
             muted
             loop
             autoplay
+            aria-label="Пример вертикальной нарезки: Kai Cenat, эфир"
             class="w-full h-full object-cover bg-black"
           ></video>
         </div>
@@ -278,7 +330,7 @@
             <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">СКАН ХАЙПА</div>
             <h3 class="font-display font-bold text-lg text-white uppercase">Вся запись, не угадайка</h3>
             <p class="font-mono text-xs text-chik-muted leading-relaxed">
-              Авто-хайп проходит весь ролик: громкость и слова из расшифровки Whisper. На эфире к звуку добавляется чат Twitch.
+              Авто-хайп проходит весь ролик: громкость и слова из распознанной речи. На эфире к звуку добавляется чат Twitch.
             </p>
           </div>
 
@@ -287,7 +339,7 @@
             <div class="font-mono text-xs uppercase tracking-wider text-chik-orange font-bold">ГОТОВЫЙ РИЛС</div>
             <h3 class="font-display font-bold text-lg text-white uppercase">9:16 + Субтитры + Теги</h3>
             <p class="font-mono text-xs text-chik-muted leading-relaxed">
-              Кроп по найденному лицу, снизу геймплей или вебка, караоке-субтитры. Заголовок и хештеги — из текста, или моделью, если задан ключ.
+              Кроп по найденному лицу, снизу геймплей или вебка, караоке-субтитры. Заголовок и хештеги — готовы к копированию.
             </p>
           </div>
 
@@ -306,13 +358,13 @@
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 01 // СЛЕЖЕНИЕ ЗА ЛИЦОМ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Кроп по лицу</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Ищет лицо и ставит его в кадр 9:16. Промах, VTuber или нет ключа — кроп может сесть мимо.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">Ищет лицо и ставит его в кадр 9:16. Промах или VTuber — кроп можно поправить вручную.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 02 // КАРАОКЕ-СУБТИТРЫ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Каждое слово в такт</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Слова вспыхивают по таймингам Whisper. Русский перевод субтитров идёт через MyMemory.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">Слова вспыхивают в такт речи. Перевод субтитров на русский — сразу в клипе.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
@@ -330,13 +382,13 @@
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
             <div class="text-chik-orange text-xs font-bold">[ 05 // ГОТОВОЕ ОПИСАНИЕ И ТЕГИ ]</div>
             <h4 class="font-display font-bold text-base text-white uppercase">Копируй и публикуй</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">К каждому MP4 — заголовок, синопсис и хештеги. С ключом модели пишет LLM, без ключа — из транскрипта.</p>
+            <p class="text-xs text-chik-muted leading-relaxed">К каждому MP4 — заголовок, синопсис и хештеги. Всё готово: скопировал и выложил.</p>
           </div>
 
           <div class="border border-chik-border bg-chik-card p-6 space-y-2.5">
-            <div class="text-chik-orange text-xs font-bold">[ 06 // НАДЕЖНЫЙ RUST ДВИЖОК ]</div>
-            <h4 class="font-display font-bold text-base text-white uppercase">Локальный рендер</h4>
-            <p class="text-xs text-chik-muted leading-relaxed">Кадр собирает Rust, кодирует ffmpeg в H.264 на этой машине. Не видеокарта и не чужой облачный рендер.</p>
+            <div class="text-chik-orange text-xs font-bold">[ 06 // БЫСТРО И СТАБИЛЬНО ]</div>
+            <h4 class="font-display font-bold text-base text-white uppercase">Готово за минуты</h4>
+            <p class="text-xs text-chik-muted leading-relaxed">Клип собирается прямо на платформе: чёткая картинка Full HD и без очередей на чужих серверах.</p>
           </div>
         </div>
       </div>
@@ -349,7 +401,7 @@
               ПРОЗРАЧНЫЕ ПАКЕТЫ КЛИПОВ
             </h2>
           </div>
-          <button onclick="switchView('pricing')" class="font-mono text-xs uppercase text-chik-muted hover:text-white border border-chik-border px-3 py-1.5 transition">
+          <button type="button" onclick="switchView('pricing')" class="font-mono text-xs uppercase text-chik-muted hover:text-white border border-chik-border px-3 py-1.5 transition">
             Все условия →
           </button>
         </div>
@@ -369,10 +421,10 @@
           Получи 5 бесплатных клипов сразу после быстрой регистрации. Никаких банковских карт.
         </p>
         <div class="pt-2">
-          <button 
+          <button type="button" 
             onclick="switchView('studio')" 
             onmousedown="playClickSound()"
-            class="bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-xl uppercase tracking-wider px-10 py-5 border border-chik-orange transition shadow-2xl glow-orange"
+            class="bg-chik-orange hover:bg-chik-orangeHover text-chik-black font-display font-black text-xl uppercase tracking-wider px-10 py-5 border border-chik-orange transition shadow-2xl glow-orange"
           >
             ОТКРЫТЬ СТУДИЮ НАРЕЗОК ⚡
           </button>
@@ -393,13 +445,13 @@
         </div>
         
         <div class="flex items-center space-x-3 font-mono text-xs">
-          <button onclick="switchView('landing')" class="text-chik-muted hover:text-white border border-chik-border px-3 py-2 uppercase transition flex items-center space-x-1.5">
+          <button type="button" onclick="switchView('landing')" class="text-chik-muted hover:text-white border border-chik-border px-3 py-2 uppercase transition flex items-center space-x-1.5">
             <span>←</span>
             <span>О сервисе</span>
           </button>
-          <button onclick="switchView('reels')" class="text-white bg-chik-surface border border-chik-border hover:border-chik-orange px-3.5 py-2 uppercase transition flex items-center space-x-2">
+          <button type="button" onclick="switchView('reels')" class="text-white bg-chik-surface border border-chik-border hover:border-chik-orange px-3.5 py-2 uppercase transition flex items-center space-x-2">
             <span>Мои клипы</span>
-            <span id="studio-reels-badge" class="bg-chik-orange text-white text-[10px] font-bold px-1.5 py-0.2">0</span>
+            <span id="studio-reels-badge" class="bg-chik-orange text-chik-black text-[10px] font-bold px-1.5 py-0.2">0</span>
           </button>
         </div>
       </div>
@@ -421,107 +473,116 @@
           
           <!-- Master Input -->
           <div class="space-y-2">
-            <div class="flex justify-between items-center font-mono text-xs">
-              <label class="font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+            <div class="flex justify-between items-center font-mono text-xs gap-3">
+              <label for="stream-url" class="font-bold text-white uppercase tracking-wider flex items-center space-x-2">
                 <span>[01] ИСТОЧНИК СТРИМА</span>
                 <span class="text-chik-muted font-normal">(VOD или ссылка на live канал)</span>
               </label>
-              <span id="detected-platform" class="text-chik-orange text-[11px] font-bold"></span>
+              <span id="detected-platform" class="text-chik-orange text-[11px] font-bold" role="status" aria-live="polite"></span>
             </div>
             
             <div class="relative flex items-center">
               <input 
                 type="text" 
                 id="stream-url" 
+                name="stream_url"
                 required
+                inputmode="url"
+                autocomplete="url"
+                spellcheck="false"
+                aria-describedby="stream-url-help"
                 oninput="detectPlatform(this.value)"
                 placeholder="Вставь ссылку: https://twitch.tv/streamer или https://youtu.be/..." 
-                class="w-full bg-chik-black border border-chik-borderLight focus:border-chik-orange text-white font-mono text-sm sm:text-base px-5 py-4 focus:outline-none transition placeholder:text-zinc-600"
+                class="w-full bg-chik-black border border-chik-borderLight focus:border-chik-orange text-white font-mono text-sm sm:text-base px-5 py-4 focus:outline-none transition placeholder:text-[#9aa3b5]"
               >
             </div>
+            <p id="stream-url-help" class="font-mono text-[10px] text-chik-muted">Поддерживаются Twitch, YouTube и прямые ссылки на видеофайл. Вставь ссылку — ниже подгрузится кадр для выбора зоны вебки.</p>
           </div>
 
           <!-- Configuration Matrix -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          <fieldset class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-0 p-0 m-0">
+            <legend class="sr-only">Параметры нарезки</legend>
             
             <!-- Matrix 1: Mode -->
             <div class="border border-chik-border bg-chik-card p-5 space-y-3">
-              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+              <label for="job-mode" class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [02] РЕЖИМ РАБОТЫ
               </label>
-              <select id="job-mode" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
+              <select id="job-mode" name="mode" aria-describedby="job-mode-help" class="w-full bg-chik-black border border-chik-borderLight text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="auto">⚡ АВТО-ХАЙП (Лучшие моменты VOD)</option>
                 <option value="live">🔴 LIVE-МОНИТОР (Ждать хайп в эфире)</option>
               </select>
-              <p class="font-mono text-[10px] text-chik-muted">Авто-хайп проходит всю запись и режет пики громкости и реплик. На эфире смотрит звук и чат Twitch.</p>
+              <p id="job-mode-help" class="font-mono text-[10px] text-chik-muted">Авто-хайп проходит всю запись и режет пики громкости и реплик. На эфире смотрит звук и чат Twitch.</p>
             </div>
 
             <!-- Matrix 2: Clips Count -->
             <div class="border border-chik-border bg-chik-card p-5 space-y-3">
-              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+              <label for="job-count" class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [03] ПАКЕТ КЛИПОВ
               </label>
-              <select id="job-count" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
+              <select id="job-count" name="count" aria-describedby="job-count-help" class="w-full bg-chik-black border border-chik-borderLight text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="1">1 ТОПОВЫЙ КЛИП</option>
                 <option value="3" selected>3 САМЫХ СОЧНЫХ КЛИПА</option>
                 <option value="5">5 ВИРУСНЫХ КЛИПОВ</option>
               </select>
-              <p class="font-mono text-[10px] text-chik-muted">Каждый клип оценивается хайп-скором и сопровождается титрами.</p>
+              <p id="job-count-help" class="font-mono text-[10px] text-chik-muted">Каждый клип оценивается хайп-скором и сопровождается титрами.</p>
             </div>
 
             <!-- Matrix 3: Gameplay Background -->
             <div class="border border-chik-border bg-chik-card p-5 space-y-3">
-              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+              <label for="job-gameplay" class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [04] НИЖНИЙ ГЕЙМПЛЕЙ (9:16)
               </label>
-              <select id="job-gameplay" class="w-full bg-chik-black border border-chik-border text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
+              <select id="job-gameplay" name="gameplay_preset" aria-describedby="job-gameplay-help" class="w-full bg-chik-black border border-chik-borderLight text-white font-mono text-xs p-3 focus:outline-none focus:border-chik-orange">
                 <option value="none" selected>ВЕБКА + СТРИМ (без игры)</option>
                 <option value="subway">SUBWAY SURFERS</option>
                 <option value="minecraft">MINECRAFT PARKOUR</option>
                 <option value="gta">GTA 5 DRIVING</option>
                 <option value="asmr">ASMR / SAND</option>
               </select>
-              <p class="font-mono text-[10px] text-chik-muted">Нижняя половина кадра: выбери геймплей-подложку или оставь лицо стримера (для витуберов — лицо аватара).</p>
+              <p id="job-gameplay-help" class="font-mono text-[10px] text-chik-muted">Нижняя половина кадра: выбери геймплей-подложку или оставь лицо стримера (для витуберов — лицо аватара).</p>
             </div>
 
             <!-- Matrix 5: Mid-roll banner -->
             <div class="border border-chik-border bg-chik-card p-5 space-y-3">
-              <label class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
+              <span id="job-banner-label" class="font-mono text-xs font-bold text-white uppercase tracking-wider block">
                 [05] РЕКЛАМНЫЙ БАННЕР ЧИК
-              </label>
-              <label class="flex items-center space-x-3 cursor-pointer select-none">
-                <input id="job-banner" type="checkbox" checked class="peer sr-only">
-                <span class="w-11 h-6 bg-chik-black border border-chik-border peer-checked:bg-chik-orange relative transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:transition-transform peer-checked:after:translate-x-5"></span>
+              </span>
+              <label for="job-banner" class="flex items-center space-x-3 cursor-pointer select-none">
+                <input id="job-banner" type="checkbox" role="switch" checked class="peer sr-only" aria-describedby="job-banner-help">
+                <span aria-hidden="true" class="w-11 h-6 bg-chik-black border border-chik-borderLight peer-checked:bg-chik-orange peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-chik-orange relative transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:transition-transform peer-checked:after:translate-x-5"></span>
                 <span class="font-mono text-xs text-white uppercase tracking-wider">Анимированный баннер в середине</span>
               </label>
-              <p class="font-mono text-[10px] text-chik-muted">В середине ролика появляется анимированный баннер сервиса, затем клип продолжается.</p>
+              <p id="job-banner-help" class="font-mono text-[10px] text-chik-muted">В середине ролика появляется анимированный баннер сервиса, затем клип продолжается.</p>
             </div>
 
-          </div>
+          </fieldset>
 
-          <div id="webcam-editor" class="hidden border border-chik-border bg-chik-card p-5 space-y-3">
+          <fieldset id="webcam-editor" class="hidden border border-chik-border bg-chik-card p-5 space-y-3 m-0">
             <div class="flex items-center justify-between gap-3 font-mono text-xs">
-              <label class="font-bold text-white uppercase tracking-wider">[06] ЗОНА ВЕБКИ</label>
-              <span id="webcam-box-label" class="text-chik-orange font-bold">x 0.70–1.00 · y 0.00–1.00</span>
+              <legend class="font-bold text-white uppercase tracking-wider">[06] ЗОНА ВЕБКИ</legend>
+              <span id="webcam-box-label" class="text-chik-orange font-bold" aria-hidden="true">x 0.70–1.00 · y 0.00–1.00</span>
             </div>
-            <p class="font-mono text-[10px] text-chik-muted leading-relaxed">
-              Автопоиска лица нет. Справа уже стоит запасная рамка. Перетащи её, потяни углы или нарисуй новую по схеме кадра. Это не превью стрима.
+            <p id="webcam-help" class="font-mono text-[10px] text-chik-muted leading-relaxed">
+              Вставь ссылку — подгрузится кадр стрима. Если лицо нашлось, рамка ставится сама; поправь её, потяни углы, нарисуй новую или двигай стрелками с клавиатуры.
             </p>
+            <p id="webcam-status" class="font-mono text-[10px] text-chik-muted" role="status" aria-live="polite"></p>
             <div id="webcam-stage" class="relative w-full max-w-2xl aspect-video bg-chik-black border border-chik-borderLight overflow-hidden touch-none select-none">
-              <div class="absolute inset-0 pointer-events-none opacity-40" style="background-image:linear-gradient(to right,rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:12.5% 25%;"></div>
-              <div class="absolute inset-0 flex items-center justify-center pointer-events-none font-mono text-[10px] uppercase tracking-widest text-zinc-600">Кадр стрима 16:9</div>
-              <div id="webcam-rect" class="absolute border-2 border-chik-orange bg-chik-orange/25 cursor-move">
-                <span data-handle="nw" class="absolute -left-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
-                <span data-handle="ne" class="absolute -right-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
-                <span data-handle="sw" class="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
-                <span data-handle="se" class="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
-                <span class="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold uppercase text-white">Вебка</span>
+              <img id="webcam-frame" alt="Кадр стрима для выбора зоны вебки" class="hidden absolute inset-0 w-full h-full object-contain pointer-events-none">
+              <div id="webcam-grid" class="absolute inset-0 pointer-events-none opacity-40" style="background-image:linear-gradient(to right,rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.08) 1px,transparent 1px);background-size:12.5% 25%;"></div>
+              <div id="webcam-frame-hint" class="absolute inset-0 flex items-center justify-center pointer-events-none font-mono text-[10px] uppercase tracking-widest text-zinc-400">Кадр стрима 16:9</div>
+              <div id="webcam-rect" role="group" tabindex="0" aria-label="Зона вебки. Двигай стрелками, меняй размер с Shift, Enter — рисовать заново." aria-describedby="webcam-help" class="absolute border-2 border-chik-orange bg-chik-orange/25 cursor-move">
+                <span data-handle="nw" aria-hidden="true" class="absolute -left-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
+                <span data-handle="ne" aria-hidden="true" class="absolute -right-1.5 -top-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
+                <span data-handle="sw" aria-hidden="true" class="absolute -left-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nesw-resize"></span>
+                <span data-handle="se" aria-hidden="true" class="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-white border border-chik-orange cursor-nwse-resize"></span>
+                <span aria-hidden="true" class="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold uppercase text-white">Вебка</span>
               </div>
             </div>
-            <button type="button" id="webcam-reset" class="font-mono text-[10px] uppercase font-bold text-chik-muted hover:text-white border border-chik-border px-3 py-1.5">
-              Вернуть запасную справа
+            <button type="button" id="webcam-reset" class="font-mono text-[10px] uppercase font-bold text-chik-muted hover:text-white border border-chik-borderLight px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chik-orange">
+              Вернуть рамку
             </button>
-          </div>
+          </fieldset>
 
           <!-- Launch Button: Big, Tactile, Industrial Safety Orange -->
           <div class="pt-4">
@@ -529,7 +590,7 @@
               type="submit" 
               id="btn-submit-job"
               onmousedown="playClickSound()"
-              class="w-full bg-chik-orange hover:bg-chik-orangeHover text-white font-display font-black text-xl sm:text-2xl uppercase tracking-wider py-5 border border-chik-orange transition duration-200 shadow-xl glow-orange flex items-center justify-center space-x-3 group"
+              class="w-full bg-chik-orange hover:bg-chik-orangeHover text-chik-black font-display font-black text-xl sm:text-2xl uppercase tracking-wider py-5 border border-chik-orange transition duration-200 shadow-xl glow-orange flex items-center justify-center space-x-3 group"
             >
               <span>ЧИКНУТЬ СТРИМ</span>
               <span class="text-2xl transform group-hover:rotate-45 transition duration-300">✂</span>
@@ -562,13 +623,13 @@
 
         <!-- Stepped Precision Progress Bar -->
         <div class="w-full bg-chik-black border border-chik-border h-3 overflow-hidden p-0.5">
-          <div id="active-progress-bar" class="bg-chik-orange h-full transition-all duration-300" style="width: 5%"></div>
+          <div id="active-progress-bar" role="progressbar" aria-label="Прогресс нарезки" aria-valuemin="0" aria-valuemax="100" aria-valuenow="5" class="bg-chik-orange h-full transition-all duration-300" style="width: 5%"></div>
         </div>
 
         <div class="flex items-center justify-between font-mono text-xs text-chik-muted">
-          <span id="active-job-stage" class="text-white">Инициализация конвейера...</span>
+          <span id="active-job-stage" class="text-white" role="status" aria-live="polite">Готовим нарезку...</span>
           <div class="flex items-center space-x-3">
-            <button type="button" onclick="handleStopActiveJob()" class="text-[10px] uppercase font-bold text-chik-coral border border-chik-coral/50 hover:bg-chik-coral hover:text-white px-2.5 py-1 transition">
+            <button type="button" onclick="handleStopActiveJob()" class="text-[10px] uppercase font-bold text-chik-coral border border-chik-coral/50 hover:bg-chik-coral hover:text-chik-black px-2.5 py-1 transition">
               🛑 ОСТАНОВИТЬ
             </button>
           </div>
@@ -582,7 +643,7 @@
             <span class="text-chik-orange">▶</span>
             <span>НЕДАВНО СГЕНЕРИРОВАННЫЕ КЛИПЫ</span>
           </div>
-          <button onclick="switchView('reels')" class="font-mono text-[11px] uppercase text-chik-orange hover:underline font-bold">
+          <button type="button" onclick="switchView('reels')" class="font-mono text-[11px] uppercase text-chik-orange hover:underline font-bold">
             Смотреть всю обойму клипов →
           </button>
         </div>
@@ -597,10 +658,10 @@
     <section id="view-reels" class="hidden space-y-8">
       <div class="flex items-center justify-between border-b border-chik-border pb-4">
         <div>
-          <h2 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">ВИДЕО-ОБОЙМА</h2>
+          <h1 class="font-display font-black text-3xl sm:text-4xl uppercase text-white tracking-tight">ВИДЕО-ОБОЙМА</h1>
           <p class="font-mono text-xs text-chik-muted uppercase">ГОТОВЫЕ ВЕРТИКАЛЬНЫЕ РИЛСЫ 9:16 ДЛЯ TIKTOK / SHORTS</p>
         </div>
-        <button onclick="loadReels()" class="font-mono text-xs uppercase font-bold text-white bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange transition">
+        <button type="button" onclick="loadReels()" class="font-mono text-xs uppercase font-bold text-chik-black bg-chik-orange hover:bg-chik-orangeHover px-4 py-2 border border-chik-orange transition">
           ОБНОВИТЬ СПИСОК
         </button>
       </div>
@@ -612,12 +673,12 @@
 
       <!-- Empty State -->
       <div id="reels-empty" class="hidden text-center py-20 border border-dashed border-chik-border space-y-4">
-        <div class="font-mono text-4xl text-zinc-600">✂ [NO_CLIPS_YET]</div>
+        <div class="font-mono text-4xl text-zinc-400">✂ [NO_CLIPS_YET]</div>
         <h3 class="font-display font-bold text-xl uppercase text-white">Обойма клипов пуста</h3>
         <p class="font-mono text-xs text-chik-muted max-w-sm mx-auto">
           Вставь ссылку на стрим на главном пульте, и автопилот нарежет первые ролики.
         </p>
-        <button onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold bg-chik-orange text-white px-6 py-3 border border-chik-orange hover:bg-chik-orangeHover transition">
+        <button type="button" onclick="switchView('studio')" class="font-mono text-xs uppercase font-bold bg-chik-orange text-chik-black px-6 py-3 border border-chik-orange hover:bg-chik-orangeHover transition">
           НАРЕЗАТЬ СТРИМ СЕЙЧАС
         </button>
       </div>
@@ -626,9 +687,9 @@
     <!-- VIEW 3: PRICING -->
     <section id="view-pricing" class="hidden space-y-10 max-w-5xl mx-auto py-6">
       <div class="text-center space-y-3">
-        <h2 class="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
+        <h1 class="font-display font-black text-4xl sm:text-5xl uppercase text-white tracking-tight">
           ЧЕСТНАЯ ОПЛАТА ЗА КЛИПЫ
-        </h2>
+        </h1>
         <p class="font-mono text-xs text-chik-muted max-w-md mx-auto">
           Никаких подписок, списывающих деньги каждый месяц. Покупай кредиты пачками и режь стримы когда удобно.
         </p>
@@ -642,13 +703,13 @@
   </main>
 
   <!-- 9:16 VIEWFINDER REEL PLAYER MODAL -->
-  <div id="player-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+  <div id="player-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
     <div class="crosshair-box bg-chik-surface border border-chik-border max-w-4xl w-full flex flex-col md:flex-row overflow-hidden max-h-[92vh] shadow-2xl">
       
       <!-- Left: 9:16 Viewfinder Frame -->
       <div class="bg-black flex items-center justify-center p-4 md:w-1/2 relative">
         <div class="aspect-reel h-[65vh] max-h-[580px] bg-zinc-950 border border-chik-border relative overflow-hidden shadow-2xl">
-          <video id="modal-video" controls autoplay playsinline class="w-full h-full object-cover"></video>
+          <video id="modal-video" controls autoplay playsinline class="w-full h-full object-cover" aria-label="Плеер вертикального клипа"></video>
         </div>
       </div>
 
@@ -656,36 +717,35 @@
       <div class="p-6 md:w-1/2 flex flex-col justify-between space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-chik-border">
         <div class="space-y-4">
           <div class="flex items-center justify-between border-b border-chik-border pb-3">
-            <span class="font-mono text-xs font-bold px-2 py-0.5 bg-chik-orange text-white uppercase" id="modal-hype-score">
+            <span class="font-mono text-xs font-bold px-2 py-0.5 bg-chik-orange text-chik-black uppercase" id="modal-hype-score">
               🔥 ХАЙП: 95%
             </span>
-            <button onclick="closePlayerModal()" class="font-mono text-sm text-zinc-400 hover:text-white px-2 py-1 border border-chik-border hover:border-white transition">
+            <button type="button" onclick="closePlayerModal()" aria-label="Закрыть окно клипа" class="font-mono text-sm text-zinc-400 hover:text-white px-2 py-1 border border-chik-borderLight hover:border-white transition">
               [✕ ЗАКРЫТЬ]
             </button>
           </div>
 
           <div>
-            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ЗАГОЛОВОК ДЛЯ TIKTOK / SHORTS</label>
             <h3 id="modal-title" class="font-display font-extrabold text-xl text-white"></h3>
           </div>
 
           <div>
-            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ОПИСАНИЕ ИЗ ТРАНСКРИПТА</label>
+            <span class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ОПИСАНИЕ КЛИПА</span>
             <div id="modal-desc" class="font-mono text-xs text-zinc-300 bg-chik-black p-3 border border-chik-border whitespace-pre-wrap max-h-36 overflow-y-auto"></div>
           </div>
 
           <div>
-            <label class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ХЕШТЕГИ</label>
+            <span class="font-mono text-[10px] text-chik-muted uppercase tracking-widest block mb-1">ХЕШТЕГИ</span>
             <div id="modal-tags" class="font-mono text-xs text-chik-orange font-bold"></div>
           </div>
         </div>
 
         <!-- Actions -->
         <div class="space-y-2 pt-4 border-t border-chik-border">
-          <button onclick="copyModalCaptions()" class="w-full font-mono text-xs uppercase font-bold py-3 bg-chik-card border border-chik-border hover:border-chik-orange text-white transition flex items-center justify-center space-x-2">
+          <button type="button" onclick="copyModalCaptions()" class="w-full font-mono text-xs uppercase font-bold py-3 bg-chik-card border border-chik-borderLight hover:border-chik-orange text-white transition flex items-center justify-center space-x-2">
             <span>📋 СКОПИРОВАТЬ ТЕКСТ + ХЕШТЕГИ</span>
           </button>
-          <button id="modal-download-btn" onclick="handleModalDownload()" class="w-full font-mono text-xs uppercase font-black py-3.5 bg-chik-orange text-white border border-chik-orange hover:bg-chik-orangeHover transition glow-orange-sm flex items-center justify-center space-x-2">
+          <button type="button" id="modal-download-btn" onclick="handleModalDownload()" class="w-full font-mono text-xs uppercase font-black py-3.5 bg-chik-orange text-chik-black border border-chik-orange hover:bg-chik-orangeHover transition glow-orange-sm flex items-center justify-center space-x-2">
             <span>⬇ СКАЧАТЬ ЧИСТЫЙ FULL HD</span>
           </button>
         </div>
@@ -695,9 +755,9 @@
   </div>
 
   <!-- AUTH MODAL -->
-  <div id="auth-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+  <div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" aria-describedby="auth-modal-subtitle" aria-hidden="true" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="crosshair-box bg-chik-surface border border-chik-border max-w-md w-full p-8 space-y-6 relative shadow-2xl">
-      <button onclick="closeAuthModal()" class="absolute right-4 top-4 font-mono text-xs text-zinc-400 hover:text-white">[✕]</button>
+      <button type="button" onclick="closeAuthModal()" aria-label="Закрыть окно авторизации" class="absolute right-4 top-4 font-mono text-xs text-zinc-400 hover:text-white">[✕]</button>
 
       <div class="space-y-1">
         <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ АВТОРИЗАЦИЯ ]</div>
@@ -705,24 +765,24 @@
         <p class="font-mono text-xs text-chik-muted" id="auth-modal-subtitle">Автопилот вирусных нарезок</p>
       </div>
 
-      <div class="flex border-b border-chik-border font-mono text-xs">
-        <button id="tab-login" onclick="setAuthTab('login')" class="flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition">ВХОД</button>
-        <button id="tab-register" onclick="setAuthTab('register')" class="flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition">РЕГИСТРАЦИЯ (+5 КЛИПОВ)</button>
+      <div class="flex border-b border-chik-border font-mono text-xs" role="tablist" aria-label="Вход или регистрация">
+        <button type="button" id="tab-login" onclick="setAuthTab('login')" role="tab" aria-selected="true" aria-controls="auth-form" class="flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition">ВХОД</button>
+        <button type="button" id="tab-register" onclick="setAuthTab('register')" role="tab" aria-selected="false" aria-controls="auth-form" class="flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition">РЕГИСТРАЦИЯ (+5 КЛИПОВ)</button>
       </div>
 
-      <form onsubmit="handleAuthSubmit(event)" class="space-y-4 font-mono">
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-4 font-mono" id="auth-form" role="tabpanel" aria-labelledby="tab-login">
         <div>
-          <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ЛОГИН / EMAIL</label>
-          <input type="text" id="auth-email" required placeholder="admin или streamer@twitch.tv" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
+          <label for="auth-email" class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ЛОГИН / EMAIL</label>
+          <input type="text" id="auth-email" name="email" required autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="auth-error" aria-invalid="false" placeholder="admin или streamer@twitch.tv" class="w-full bg-chik-black border border-chik-borderLight text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
         </div>
         <div>
-          <label class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ПАРОЛЬ</label>
-          <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full bg-chik-black border border-chik-border text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
+          <label for="auth-password" class="block text-[10px] uppercase tracking-wider text-chik-muted mb-1">ПАРОЛЬ</label>
+          <input type="password" id="auth-password" name="password" required minlength="4" autocomplete="current-password" aria-describedby="auth-error" aria-invalid="false" placeholder="••••••••" class="w-full bg-chik-black border border-chik-borderLight text-white px-3.5 py-2.5 text-xs focus:outline-none focus:border-chik-orange">
         </div>
 
-        <div id="auth-error" class="hidden text-xs text-chik-coral bg-red-950/30 border border-chik-coral/40 p-2 font-mono"></div>
+        <div id="auth-error" class="hidden text-xs text-chik-coral bg-red-950/30 border border-chik-coral/40 p-2 font-mono" role="alert" aria-live="assertive"></div>
 
-        <button type="submit" id="auth-submit-btn" class="w-full bg-chik-orange hover:bg-chik-orangeHover text-white font-black py-3 text-xs uppercase tracking-wider transition glow-orange-sm">
+        <button type="submit" id="auth-submit-btn" class="w-full bg-chik-orange hover:bg-chik-orangeHover text-chik-black font-black py-3 text-xs uppercase tracking-wider transition glow-orange-sm">
           ВОЙТИ В СИСТЕМУ
         </button>
       </form>
@@ -757,13 +817,99 @@
       } catch (e) {}
     }
 
+    // --- Accessibility helpers ---------------------------------------------
+    // Announce a short message to screen readers (polite live region).
+    function announce(message) {
+      const el = document.getElementById('sr-live');
+      if (!el) return;
+      el.textContent = '';
+      // Force a re-announcement of identical text.
+      setTimeout(() => { el.textContent = message; }, 30);
+    }
+
+    // Visual toast (replaces blocking alert()) that is also announced.
+    let toastTimer = null;
+    function toast(message, kind) {
+      let box = document.getElementById('chik-toast');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'chik-toast';
+        box.setAttribute('role', 'status');
+        box.setAttribute('aria-live', 'polite');
+        box.className = 'fixed z-[60] left-1/2 -translate-x-1/2 bottom-6 max-w-[90vw] font-mono text-xs font-bold uppercase tracking-wider px-4 py-3 border shadow-2xl transition-opacity duration-200';
+        document.body.appendChild(box);
+      }
+      const palette = kind === 'error'
+        ? 'bg-red-950 text-chik-coral border-chik-coral/60'
+        : 'bg-chik-black text-chik-orange border-chik-orange/60';
+      box.className = 'fixed z-[60] left-1/2 -translate-x-1/2 bottom-6 max-w-[90vw] font-mono text-xs font-bold uppercase tracking-wider px-4 py-3 border shadow-2xl transition-opacity duration-200 ' + palette;
+      box.textContent = message;
+      box.style.opacity = '1';
+      announce(message);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { box.style.opacity = '0'; }, 3200);
+    }
+
+    // Focus trap stack: the currently open dialog (if any).
+    let openDialog = null;
+    let lastFocusedBeforeDialog = null;
+    const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+    function focusablesIn(root) {
+      return Array.from(root.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null || el === document.activeElement);
+    }
+
+    function openDialogEl(el) {
+      lastFocusedBeforeDialog = document.activeElement;
+      openDialog = el;
+      el.classList.remove('hidden');
+      el.setAttribute('aria-hidden', 'false');
+      // Move focus to the first focusable control inside the dialog.
+      const f = focusablesIn(el);
+      (f[0] || el).focus();
+    }
+
+    function closeDialogEl(el) {
+      if (!el) return;
+      el.classList.add('hidden');
+      el.setAttribute('aria-hidden', 'true');
+      if (openDialog === el) openDialog = null;
+      if (lastFocusedBeforeDialog && typeof lastFocusedBeforeDialog.focus === 'function') {
+        lastFocusedBeforeDialog.focus();
+        lastFocusedBeforeDialog = null;
+      }
+    }
+
+    // Global keyboard handling: Esc closes the top dialog, Tab is trapped.
+    document.addEventListener('keydown', (e) => {
+      if (!openDialog) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (openDialog.id === 'auth-modal') closeAuthModal();
+        else if (openDialog.id === 'player-modal') closePlayerModal();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const f = focusablesIn(openDialog);
+        if (f.length === 0) { e.preventDefault(); return; }
+        const first = f[0];
+        const last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus();
+        }
+      }
+    });
+
     // Platform detection (Twitch / YouTube icon feedback & smart mode switch)
+    let webcamPreviewDebounce = null;
     function detectPlatform(val) {
       const badge = document.getElementById('detected-platform');
       const modeSelect = document.getElementById('job-mode');
       if (val.includes('twitch.tv/')) {
         if (!val.includes('/videos/') && !val.includes('/clip/')) {
-          badge.innerText = '🟣 TWITCH LIVE — АВТО-ПЕРЕКЛЮЧЕНО НА LIVE-МОНИТОР (БУФЕР)';
+          badge.innerText = '🟣 TWITCH LIVE — ВКЛЮЧЁН РЕЖИМ ЭФИРА';
           badge.className = 'text-chik-orange text-[10px] font-bold font-mono';
           if (modeSelect) modeSelect.value = 'live';
         } else {
@@ -777,6 +923,9 @@
       } else {
         badge.innerText = '';
       }
+      // Grab a real preview frame once the link settles (1s after typing stops).
+      clearTimeout(webcamPreviewDebounce);
+      webcamPreviewDebounce = setTimeout(() => loadWebcamPreview(val), 1000);
     }
 
     // Build an authenticated media URL (media elements can't send headers).
@@ -801,10 +950,16 @@
         const nav = document.getElementById('nav-' + v);
         if (v === viewName) {
           if (el) el.classList.remove('hidden');
-          if (nav) nav.className = "px-4 py-2 text-white bg-chik-orange font-bold uppercase tracking-wider transition";
+          if (nav) {
+            nav.className = "px-4 py-2 text-chik-black bg-chik-orange font-bold uppercase tracking-wider transition";
+            nav.setAttribute('aria-current', 'page');
+          }
         } else {
           if (el) el.classList.add('hidden');
-          if (nav) nav.className = "px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition";
+          if (nav) {
+            nav.className = "px-4 py-2 text-chik-muted hover:text-white uppercase tracking-wider transition";
+            nav.removeAttribute('aria-current');
+          }
         }
       });
 
@@ -820,7 +975,9 @@
         const input = document.getElementById('stream-url');
         if (input && !input.value) setTimeout(() => input.focus(), 150);
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      announce('Открыт раздел: ' + viewName);
     }
 
     // Demo URLs
@@ -897,13 +1054,16 @@
       playClickSound();
       authMode = mode;
       setAuthTab(mode);
-      document.getElementById('auth-modal').classList.remove('hidden');
+      const modal = document.getElementById('auth-modal');
       document.getElementById('auth-error').classList.add('hidden');
+      openDialogEl(modal);
+      // Focus the first field for fast keyboard entry.
+      setTimeout(() => document.getElementById('auth-email').focus(), 60);
     }
 
     function closeAuthModal() {
       playClickSound();
-      document.getElementById('auth-modal').classList.add('hidden');
+      closeDialogEl(document.getElementById('auth-modal'));
     }
 
     function setAuthTab(mode) {
@@ -912,15 +1072,25 @@
       const tabReg = document.getElementById('tab-register');
       const title = document.getElementById('auth-modal-title');
       const btn = document.getElementById('auth-submit-btn');
+      const form = document.getElementById('auth-form');
+      const pwd = document.getElementById('auth-password');
 
       if (mode === 'login') {
         tabLogin.className = "flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition";
         tabReg.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
+        tabLogin.setAttribute('aria-selected', 'true');
+        tabReg.setAttribute('aria-selected', 'false');
+        form.setAttribute('aria-labelledby', 'tab-login');
+        pwd.setAttribute('autocomplete', 'current-password');
         title.innerText = "ВХОД В ЧИК";
         btn.innerText = "ВОЙТИ В СИСТЕМУ";
       } else {
         tabReg.className = "flex-1 pb-3 text-chik-orange border-b-2 border-chik-orange font-bold uppercase transition";
         tabLogin.className = "flex-1 pb-3 text-chik-muted hover:text-white font-bold uppercase transition";
+        tabReg.setAttribute('aria-selected', 'true');
+        tabLogin.setAttribute('aria-selected', 'false');
+        form.setAttribute('aria-labelledby', 'tab-register');
+        pwd.setAttribute('autocomplete', 'new-password');
         title.innerText = "РЕГИСТРАЦИЯ СТРИМЕРА";
         btn.innerText = "СОЗДАТЬ АККАУНТ (+5 КЛИПОВ)";
       }
@@ -949,13 +1119,19 @@
           updateAuthUI(currentUser);
           closeAuthModal();
           switchView('studio');
+          const urlInput = document.getElementById('stream-url');
+          if (urlInput && urlInput.value.trim()) loadWebcamPreview(urlInput.value);
         } else {
           errorDiv.innerText = data.error || 'Ошибка входа';
           errorDiv.classList.remove('hidden');
+          document.getElementById('auth-email').setAttribute('aria-invalid', 'true');
+          document.getElementById('auth-password').setAttribute('aria-invalid', 'true');
+          document.getElementById('auth-email').focus();
         }
       } catch (err) {
-        errorDiv.innerText = 'Сервер недоступен';
+        errorDiv.innerText = 'Нет связи. Попробуй ещё раз';
         errorDiv.classList.remove('hidden');
+        announce('Нет связи. Попробуй ещё раз');
       }
     }
 
@@ -997,10 +1173,10 @@
         if (res.ok) {
           showActiveJobWidget(job);
         } else {
-          alert(job.error || 'Ошибка создания задачи');
+          toast(job.error || 'Ошибка создания задачи', 'error');
         }
       } catch (err) {
-        alert('Ошибка связи с сервером');
+        toast('Нет связи. Попробуй ещё раз', 'error');
       }
     }
 
@@ -1010,7 +1186,7 @@
       widget.classList.remove('hidden');
       document.getElementById('active-job-title').innerText = `НАРЕЗКА: ${job.channel_name}`;
       document.getElementById('active-job-url').innerText = job.stream_url;
-      updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди конвейера...');
+      updateJobProgress(job.progress_percent || 5, job.stage || 'В очереди на нарезку...');
     }
 
     async function handleStopActiveJob() {
@@ -1027,10 +1203,10 @@
           updateJobProgress(100, 'ЗАДАЧА ОСТАНОВЛЕНА');
           document.getElementById('active-job-title').innerText = 'ОСТАНОВЛЕНО';
         } else {
-          alert(data.error || 'Ошибка остановки');
+          toast(data.error || 'Ошибка остановки', 'error');
         }
       } catch (e) {
-        alert('Ошибка связи с сервером');
+        toast('Нет связи. Попробуй ещё раз', 'error');
       }
     }
 
@@ -1039,6 +1215,7 @@
       const pctText = document.getElementById('active-job-percent');
       const stageText = document.getElementById('active-job-stage');
       bar.style.width = percent + '%';
+      bar.setAttribute('aria-valuenow', String(percent));
       pctText.innerText = percent + '%';
       stageText.innerText = stage;
     }
@@ -1077,25 +1254,31 @@
         if (container) {
           reels.forEach(r => {
             const card = document.createElement('div');
-            card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-orange transition duration-200 flex flex-col group cursor-pointer shadow-xl";
+            card.className = "crosshair-box bg-chik-surface border border-chik-border hover:border-chik-orange focus-visible:border-chik-orange transition duration-200 flex flex-col group cursor-pointer shadow-xl";
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `Открыть клип: ${r.title}, ${r.is_unlocked ? 'готов' : 'заблокирован, 1 кредит'}`);
             card.onclick = () => openPlayerModal(r);
+            card.onkeydown = (e) => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPlayerModal(r); }
+            };
             card.innerHTML = `
               <div class="aspect-reel bg-black relative overflow-hidden flex items-center justify-center">
-                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
+                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" muted playsinline aria-hidden="true" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
                 <div class="absolute top-2.5 right-2.5 bg-chik-black/95 px-2 py-0.5 text-[9px] font-mono font-bold text-chik-orange border border-chik-orange/40">
                   🔥 ${Math.round(r.hype_score * 100)}% ХАЙП
                 </div>
                 <div class="absolute bottom-3 left-3 right-3 space-y-1">
-                  <h4 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h4>
+                  <h3 class="font-display font-bold text-sm text-white line-clamp-2">${r.title}</h3>
                   <p class="font-mono text-[10px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</p>
                 </div>
-                <div class="w-11 h-11 bg-chik-orange text-white flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-orange-sm">
+                <div class="w-11 h-11 bg-chik-orange text-chik-black flex items-center justify-center text-sm font-bold absolute opacity-0 group-hover:opacity-100 transition transform scale-75 group-hover:scale-100 glow-orange-sm">
                   ▶
                 </div>
               </div>
               <div class="p-3 border-t border-chik-border bg-chik-card flex items-center justify-between font-mono text-[11px]">
-                <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-500'}">
+                <span class="${r.is_unlocked ? 'text-green-400 font-bold' : 'text-zinc-400'}">
                   ${r.is_unlocked ? '✅ ГОТОВ' : '🔒 1 КРЕДИТ'}
                 </span>
                 <span class="text-chik-orange font-bold uppercase tracking-wider">СМОТРЕТЬ →</span>
@@ -1111,17 +1294,23 @@
           const top3 = reels.slice(0, 3);
           top3.forEach(r => {
             const mini = document.createElement('div');
-            mini.className = "bg-chik-black border border-chik-border hover:border-chik-orange p-3 flex items-center space-x-3 cursor-pointer group transition";
+            mini.className = "bg-chik-black border border-chik-border hover:border-chik-orange focus-visible:border-chik-orange p-3 flex items-center space-x-3 cursor-pointer group transition";
+            mini.setAttribute('role', 'button');
+            mini.setAttribute('tabindex', '0');
+            mini.setAttribute('aria-label', `Открыть клип: ${r.title}`);
             mini.onclick = () => openPlayerModal(r);
+            mini.onkeydown = (e) => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPlayerModal(r); }
+            };
             mini.innerHTML = `
               <div class="w-14 h-20 bg-zinc-950 border border-zinc-800 relative flex-shrink-0 overflow-hidden flex items-center justify-center">
-                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" class="w-full h-full object-cover"></video>
+                <video src="${videoUrl(r.id)}#t=0.5" preload="metadata" muted playsinline aria-hidden="true" class="w-full h-full object-cover"></video>
                 <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-xs text-white opacity-0 group-hover:opacity-100 transition">▶</span>
               </div>
               <div class="overflow-hidden flex-1 space-y-1">
                 <div class="font-display font-bold text-xs text-white truncate">${r.title}</div>
                 <div class="font-mono text-[10px] text-chik-orange font-bold">🔥 ${Math.round(r.hype_score * 100)}% ХАЙП</div>
-                <div class="font-mono text-[9px] text-zinc-500">${Math.round(r.duration_secs)}s // 9:16 SHORTS</div>
+                <div class="font-mono text-[9px] text-zinc-400">${Math.round(r.duration_secs)}s // 9:16 SHORTS</div>
                 <div class="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider pt-0.5">СМОТРЕТЬ →</div>
               </div>
             `;
@@ -1147,7 +1336,7 @@
 
       video.src = videoUrl(reel.id);
       title.innerText = reel.title;
-      desc.innerText = reel.description || 'Автоматически сформированный транскрипт момента.';
+      desc.innerText = reel.description || 'Автоматически сформированное описание клипа.';
       tags.innerText = reel.tags;
       hype.innerText = `🔥 ХАЙП: ${Math.round(reel.hype_score * 100)}%`;
 
@@ -1157,7 +1346,7 @@
         downloadBtn.innerHTML = `<span>🔓 РАЗБЛОКИРОВАТЬ ЗА 1 КРЕДИТ</span>`;
       }
 
-      modal.classList.remove('hidden');
+      openDialogEl(modal);
     }
 
     function closePlayerModal() {
@@ -1166,7 +1355,7 @@
       const video = document.getElementById('modal-video');
       video.pause();
       video.src = '';
-      modal.classList.add('hidden');
+      closeDialogEl(modal);
     }
 
     function copyModalCaptions() {
@@ -1174,7 +1363,7 @@
       if (!currentModalReel) return;
       const text = `${currentModalReel.title}\n\n${currentModalReel.description}\n\n${currentModalReel.tags}`;
       navigator.clipboard.writeText(text);
-      alert('Текст, описание и теги скопированы в буфер обмена!');
+      toast('Текст, описание и теги скопированы в буфер обмена!');
     }
 
     async function handleModalDownload() {
@@ -1201,13 +1390,13 @@
             currentUser.credits = data.credits;
             updateAuthUI(currentUser);
             openPlayerModal(currentModalReel);
-            alert('Рилс разблокирован! Теперь вы можете скачать файл.');
+            toast('Рилс разблокирован! Теперь вы можете скачать файл.');
           } else {
-            alert(data.error || 'Недостаточно кредитов');
+            toast(data.error || 'Недостаточно кредитов', 'error');
             openTopupModal();
           }
         } catch (e) {
-          alert('Ошибка связи с сервером');
+          toast('Нет связи. Попробуй ещё раз', 'error');
         }
       }
     }
@@ -1243,6 +1432,9 @@
 
     let webcamAuto = null;
     let webcamTouched = false;
+    let webcamPreviewActive = false;
+    let webcamPreviewBox = null;
+    let webcamPreviewToken = 0;
     let webcamFallback = { x0: 0.7, y0: 0, x1: 1, y1: 1 };
     let webcamBox = { x0: 0.7, y0: 0, x1: 1, y1: 1 };
 
@@ -1292,13 +1484,108 @@
       if (!editor) return;
       const gameplay = document.getElementById('job-gameplay');
       const webcamMode = !gameplay || gameplay.value === 'none';
-      editor.classList.toggle('hidden', !(webcamAuto === false && webcamMode));
+      editor.classList.toggle('hidden', !(webcamMode && webcamPreviewActive));
     }
 
     function webcamSpecForJob(gameplayPreset) {
-      if (webcamAuto !== false || gameplayPreset !== 'none') return undefined;
+      if (gameplayPreset !== 'none') return undefined;
+      // Send a manual box only when the operator adjusted it, or when
+      // auto-detect could not pick one (so the fallback/their box must drive the render).
+      const needsManual = webcamTouched || (webcamPreviewActive && !webcamPreviewBox);
+      if (!needsManual) return undefined;
       const b = normalizeBox(webcamBox);
       return [b.x0, b.y0, b.x1, b.y1].map(n => n.toFixed(4)).join(',');
+    }
+
+    function setWebcamStatus(text, isError) {
+      const el = document.getElementById('webcam-status');
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'font-mono text-[10px] ' + (isError ? 'text-red-400' : 'text-chik-muted');
+    }
+
+    function showWebcamFrame(dataUrl) {
+      const img = document.getElementById('webcam-frame');
+      const stage = document.getElementById('webcam-stage');
+      const grid = document.getElementById('webcam-grid');
+      const hint = document.getElementById('webcam-frame-hint');
+      if (!img) return;
+      if (dataUrl) {
+        img.onload = () => {
+          // Match the stage to the real frame so the rect maps 1:1 to the
+          // picture; otherwise a non-16:9 grab would letterbox and the box
+          // would drift from what the render crops.
+          if (stage && img.naturalWidth && img.naturalHeight) {
+            stage.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+          }
+        };
+        img.src = dataUrl;
+        img.classList.remove('hidden');
+        if (grid) grid.classList.add('hidden');
+        if (hint) hint.classList.add('hidden');
+      } else {
+        img.removeAttribute('src');
+        img.classList.add('hidden');
+        if (stage) stage.style.aspectRatio = '16 / 9';
+        if (grid) grid.classList.remove('hidden');
+        if (hint) hint.classList.remove('hidden');
+      }
+    }
+
+    // Pull a real frame for the pasted link and, if auto-detect is available, the
+    // box it picked. The operator can then adjust that box before starting a job.
+    async function loadWebcamPreview(url) {
+      const token = ++webcamPreviewToken;
+      const trimmed = (url || '').trim();
+      const looksLikeLink = /^https?:\/\//i.test(trimmed);
+      if (!looksLikeLink || !currentToken) {
+        webcamPreviewActive = false;
+        webcamPreviewBox = null;
+        showWebcamFrame(null);
+        syncWebcamEditor();
+        return;
+      }
+      webcamPreviewActive = true;
+      syncWebcamEditor();
+      setWebcamStatus('Загружаю кадр стрима…', false);
+      try {
+        const res = await fetch('/api/webcam/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + currentToken,
+          },
+          body: JSON.stringify({ stream_url: trimmed }),
+        });
+        if (token !== webcamPreviewToken) return; // stale response
+        const data = await res.json();
+        if (!res.ok) {
+          showWebcamFrame(null);
+          setWebcamStatus(data.error || 'Не удалось получить кадр', true);
+          return;
+        }
+        showWebcamFrame(data.frame || null);
+        if (Array.isArray(data.box) && data.box.length === 4) {
+          webcamPreviewBox = {
+            x0: Number(data.box[0]),
+            y0: Number(data.box[1]),
+            x1: Number(data.box[2]),
+            y1: Number(data.box[3]),
+          };
+          webcamTouched = false;
+          webcamBox = { ...webcamPreviewBox };
+          paintWebcamBox();
+          setWebcamStatus('Лицо найдено — поправь рамку при необходимости', false);
+        } else if (data.auto === false) {
+          setWebcamStatus('Автопоиск недоступен — расставь рамку вручную по кадру', false);
+        } else {
+          setWebcamStatus('Лицо не найдено — расставь рамку вручную по кадру', true);
+        }
+      } catch (e) {
+        if (token !== webcamPreviewToken) return;
+        showWebcamFrame(null);
+        setWebcamStatus('Ошибка связи при загрузке кадра', true);
+      }
     }
 
     async function loadWebcamConfig() {
@@ -1385,13 +1672,53 @@
       stage.addEventListener('pointercancel', endDrag);
       if (reset) {
         reset.addEventListener('click', () => {
-          webcamTouched = true;
-          webcamBox = { ...webcamFallback };
+          webcamTouched = false;
+          webcamBox = { ...(webcamPreviewBox || webcamFallback) };
           paintWebcamBox();
         });
       }
       const gameplay = document.getElementById('job-gameplay');
       if (gameplay) gameplay.addEventListener('change', syncWebcamEditor);
+
+      // Keyboard control for the box (the rect is focusable). Arrows move it,
+      // Shift+arrows resize, Enter draws a fresh centered box. Mirrors the
+      // pointer workflow so the editor is operable without a mouse.
+      const rect = document.getElementById('webcam-rect');
+      if (rect) {
+        rect.addEventListener('keydown', (ev) => {
+          const step = ev.altKey ? 0.005 : 0.02;
+          let b = orderedBox(webcamBox);
+          let handled = true;
+          if (ev.key === 'Enter') {
+            b = { x0: 0.35, y0: 0.3, x1: 0.65, y1: 0.7 };
+          } else if (ev.key.startsWith('Arrow')) {
+            const dx = ev.key === 'ArrowLeft' ? -step : ev.key === 'ArrowRight' ? step : 0;
+            const dy = ev.key === 'ArrowUp' ? -step : ev.key === 'ArrowDown' ? step : 0;
+            if (ev.shiftKey) {
+              // Resize: move the edge the arrow points at.
+              if (dx < 0) b.x0 += dx; else if (dx > 0) b.x1 += dx;
+              if (dy < 0) b.y0 += dy; else if (dy > 0) b.y1 += dy;
+            } else {
+              // Move: shift both edges, keeping inside the frame.
+              const w = b.x1 - b.x0;
+              const h = b.y1 - b.y0;
+              let x0 = Math.min(Math.max(0, b.x0 + dx), 1 - w);
+              let y0 = Math.min(Math.max(0, b.y0 + dy), 1 - h);
+              b = { x0, y0, x1: x0 + w, y1: y0 + h };
+            }
+          } else {
+            handled = false;
+          }
+          if (!handled) return;
+          ev.preventDefault();
+          webcamTouched = true;
+          webcamBox = normalizeBox(b);
+          paintWebcamBox();
+          const label = document.getElementById('webcam-box-label');
+          if (label) announce('Зона вебки: ' + label.textContent);
+        });
+      }
+
       paintWebcamBox();
     }
 
@@ -1410,17 +1737,17 @@
             const card = document.createElement('div');
             card.className = `crosshair-box bg-chik-surface border ${p.is_popular ? 'border-chik-orange glow-orange' : 'border-chik-border'} p-8 flex flex-col justify-between space-y-6 relative`;
             card.innerHTML = `
-              ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-orange text-white font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
+              ${p.is_popular ? '<div class="absolute top-0 right-0 bg-chik-orange text-chik-black font-mono text-[9px] font-black uppercase tracking-widest px-3 py-1">ХИТ ВЫБОРА</div>' : ''}
               <div class="space-y-4">
                 <div class="font-mono text-xs text-chik-orange uppercase font-bold">[ ПАКЕТ ]</div>
                 <h3 class="font-display font-black text-2xl uppercase text-white">${p.name}</h3>
                 <p class="font-mono text-xs text-chik-muted leading-relaxed">${p.description}</p>
                 <div class="pt-3 border-t border-chik-border">
                   <span class="font-mono text-4xl font-black text-white">${p.price_rub} ₽</span>
-                  <span class="font-mono text-xs text-zinc-500 ml-1">/ ${p.credits} КЛИПОВ</span>
+                  <span class="font-mono text-xs text-zinc-400 ml-1">/ ${p.credits} КЛИПОВ</span>
                 </div>
               </div>
-              <button onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-orange text-white hover:bg-chik-orangeHover' : 'bg-chik-card text-white hover:border-chik-orange border border-chik-border'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition">
+              <button type="button" onclick="handleTopup('${p.id}')" class="w-full ${p.is_popular ? 'bg-chik-orange text-chik-black hover:bg-chik-orangeHover' : 'bg-chik-card text-white hover:border-chik-orange border border-chik-borderLight'} font-mono font-bold text-xs uppercase tracking-wider py-4 transition" aria-label="Активировать пакет ${p.name} за ${p.price_rub} рублей">
                 АКТИВИРОВАТЬ ПАКЕТ
               </button>
             `;
@@ -1453,7 +1780,7 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          alert(data.error || 'Ошибка пополнения');
+          toast(data.error || 'Ошибка пополнения', 'error');
           return;
         }
         if (data.payment_url) {
@@ -1464,10 +1791,10 @@
         // Demo mode (no acquiring keys): credits granted immediately.
         currentUser.credits = data.credits;
         updateAuthUI(currentUser);
-        alert(data.message);
+        toast(data.message);
         switchView('studio');
       } catch (e) {
-        alert('Ошибка связи с сервером');
+        toast('Нет связи. Попробуй ещё раз', 'error');
       }
     }
 
@@ -1492,7 +1819,7 @@
                 currentUser.credits = data.balance;
                 updateAuthUI(currentUser);
               }
-              alert('Оплата прошла успешно! Начислено +' + data.credits + ' кредитов.');
+              toast('Оплата прошла успешно! Начислено +' + data.credits + ' кредитов.');
               history.replaceState({}, '', '/studio');
               switchView('studio');
               return;
@@ -1522,7 +1849,7 @@
           } else if (msg.type === 'job_status') {
             if (!activeJobId || msg.job_id === activeJobId) {
               if (msg.status === 'completed') {
-                updateJobProgress(100, 'КОНВЕЙЕР ЗАВЕРШЕН. КЛИПЫ ГОТОВЫ.');
+                updateJobProgress(100, 'НАРЕЗКА ЗАВЕРШЕНА. КЛИПЫ ГОТОВЫ.');
                 loadReels();
               } else if (msg.status === 'failed') {
                 updateJobProgress(100, 'СБОЙ: ' + (msg.error || 'ошибка нарезки'));

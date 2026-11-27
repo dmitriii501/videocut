@@ -264,6 +264,7 @@ fn parse_and_store_reel(
     }
 
     let dur = duration(path);
+    let hype_score = read_hype(path);
     let reel_id = uuid::Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
@@ -276,11 +277,22 @@ fn parse_and_store_reel(
         tags,
         file_path: path.display().to_string(),
         duration_secs: dur,
-        hype_score: 0.95,
+        hype_score,
         is_unlocked: false,
         created_at: now,
     };
 
     db.create_reel(&reel)?;
     Ok(reel)
+}
+
+/// Read the `.hype` sidecar written by the pipeline; fall back to a neutral
+/// value when it is missing or malformed.
+fn read_hype(path: &Path) -> f64 {
+    let sidecar = path.with_extension("hype");
+    std::fs::read_to_string(&sidecar)
+        .ok()
+        .and_then(|s| s.trim().parse::<f64>().ok())
+        .map(|v| v.clamp(0.0, 1.0))
+        .unwrap_or(0.5)
 }

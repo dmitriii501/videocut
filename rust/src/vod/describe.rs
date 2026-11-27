@@ -63,6 +63,96 @@ fn token_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"[A-Za-zА-Яа-яЁё0-9]+").unwrap())
 }
 
+/// Matches URLs / bare domains so they never leak into titles or hashtags.
+fn url_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r"(?i)\b(?:https?://\S+|www\.\S+|\S+\.(?:com|ru|net|org|tv|io|gg|me|be|ly|co)\b)",
+        )
+        .unwrap()
+    })
+}
+
+/// URL / platform fragments that make meaningless hashtags when whisper
+/// transcribes a spoken link ("точка ком", "твич", "ютуб" and so on).
+const JUNK: &[&str] = &[
+    "http", "https", "www", "twitch", "youtube", "youtu", "tiktok", "instagram", "telegram",
+    "discord", "kick", "clip", "clips", "gmail", "subscribe", "follow",
+];
+
+fn junk_set() -> &'static HashSet<&'static str> {
+    static SET: OnceLock<HashSet<&'static str>> = OnceLock::new();
+    SET.get_or_init(|| JUNK.iter().copied().collect())
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Script {
+    Cyrillic,
+    Latin,
+}
+
+fn script_of(ch: char) -> Option<Script> {
+    if ('\u{0400}'..='\u{04FF}').contains(&ch) {
+        Some(Script::Cyrillic)
+    } else if ch.is_ascii_alphabetic() {
+        Some(Script::Latin)
+    } else {
+        None
+    }
+}
+
+/// Dominant writing system of the transcript (used to avoid mixing ru+en tags).
+fn dominant_script(text: &str) -> Option<Script> {
+    let (mut cyr, mut lat) = (0usize, 0usize);
+    for ch in text.chars() {
+        match script_of(ch) {
+            Some(Script::Cyrillic) => cyr += 1,
+            Some(Script::Latin) => lat += 1,
+            None => {}
+        }
+    }
+    if cyr == 0 && lat == 0 {
+        None
+    } else if cyr >= lat {
+        Some(Script::Cyrillic)
+    } else {
+        Some(Script::Latin)
+    }
+}
+
+fn has_script(word: &str, want: Script) -> bool {
+    word.chars().any(|c| script_of(c) == Some(want))
+}
+
+fn strip_urls(text: &str) -> String {
+    url_re().replace_all(text, " ").to_string()
+}
+
+/// A candidate is "meaningful" if it has enough letters and is not mostly
+/// digits/punctuation (filters whisper number-salad and URL gibberish).
+fn meaningful(s: &str) -> bool {
+    let letters = s.chars().filter(|c| c.is_alphabetic()).count();
+    let total = s.chars().filter(|c| !c.is_whitespace()).count();
+    letters >= 6 && total > 0 && letters * 100 / total >= 50
+}
+
+/// Trim `cand` to `limit` chars on a word boundary, appending an ellipsis.
+fn truncate_ellipsis(cand: &str, limit: usize) -> String {
+    if cand.chars().count() <= limit {
+        return cand.to_string();
+    }
+    let head: String = cand.chars().take(limit).collect();
+    let cut = match head.rsplit_once(' ') {
+        Some((left, _)) => left,
+        None => head.as_str(),
+    };
+    format!(
+        "{}…",
+        cut.trim_end_matches([' ', '.', ',', '!', '…', '-'])
+    )
+}
+
 fn clean(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut prev_space = false;
@@ -114,10 +204,23 @@ fn sentences(text: &str) -> Vec<String> {
 fn hashtags(text: &str, limit: usize) -> Vec<String> {
     let mut seen: Vec<String> = Vec::new();
     let stop = stop_set();
+    let junk = junk_set();
+    let want = dominant_script(text);
+    let text = strip_urls(text);
     for m in word_re().find_iter(&text.to_lowercase()) {
         let w = m.as_str();
-        if stop.contains(w) || seen.iter().any(|s| s == w) {
+        if stop.contains(w)
+            || junk.contains(w)
+            || seen.iter().any(|s| s == w)
+            || !w.chars().any(|c| c.is_alphabetic())
+        {
             continue;
+        }
+        // Keep the dominant language only; skip stray foreign-script tokens.
+        if let Some(want) = want {
+            if !has_script(w, want) {
+                continue;
+            }
         }
         seen.push(w.to_string());
         if seen.len() >= limit {
@@ -127,31 +230,33 @@ fn hashtags(text: &str, limit: usize) -> Vec<String> {
     seen.into_iter().map(|w| format!("#{w}")).collect()
 }
 
-/// First sentence, trimmed to `limit` chars on a word boundary.
+/// First meaningful sentence, trimmed to `limit` chars on a word boundary.
 fn short_title(text: &str, limit: usize) -> String {
-    let sents = sentences(text);
-    let cand = sents
-        .iter()
-        .find(|s| s.chars().count() >= 12)
-        .cloned()
-        .unwrap_or_else(|| text.to_string());
-    let cand = cand.trim_matches(|c| matches!(c, ' ' | '.' | ',' | '!' | '…' | '-'));
-    if cand.chars().count() <= limit {
-        return cand.to_string();
-    }
-    let head: String = cand.chars().take(limit).collect();
-    let cut = match head.rsplit_once(' ') {
-        Some((left, _)) => left,
-        None => head.as_str(),
+    let text = strip_urls(text);
+    let want = dominant_script(&text);
+    let sents = sentences(&text);
+    let pick = |min: usize| -> Option<String> {
+        sents
+            .iter()
+            .map(|s| s.trim_matches(|c| matches!(c, ' ' | '.' | ',' | '!' | '…' | '-')))
+            .find(|s| {
+                s.chars().count() >= min
+                    && meaningful(s)
+                    && want.map(|w| has_script(s, w)).unwrap_or(true)
+            })
+            .map(|s| s.to_string())
     };
-    format!(
-        "{}…",
-        cut.trim_end_matches([' ', '.', ',', '!', '…', '-'])
-    )
+    let cand = pick(12)
+        .or_else(|| pick(6))
+        .unwrap_or_else(|| text.trim().to_string());
+    if cand.is_empty() {
+        return String::new();
+    }
+    truncate_ellipsis(&cand, limit)
 }
 
 fn heuristic(transcript: &str, channel: &str) -> Description {
-    let text = clean(transcript);
+    let text = clean(&strip_urls(transcript));
     let mut title = short_title(&text, config::describe_title_max());
     if title.is_empty() {
         title = "Стрим-момент".to_string();
@@ -159,7 +264,15 @@ fn heuristic(transcript: &str, channel: &str) -> Description {
     let desc = if text.is_empty() {
         "Момент со стрима.".to_string()
     } else {
-        text.chars().take(config::describe_desc_max()).collect()
+        let raw: String = text.chars().take(config::describe_desc_max()).collect();
+        // Cut at the last complete sentence so the description never ends mid-word.
+        match sentences(&raw) {
+            mut s if s.len() > 1 => {
+                s.pop();
+                s.join(" ")
+            }
+            _ => raw,
+        }
     };
 
     // Hashtags: skip words already in the title to avoid repetition.
@@ -329,6 +442,35 @@ mod tests {
         assert!(!d.description.is_empty());
         assert!(d.hashtags.iter().any(|t| t == "#streamer_1"));
         assert!(d.hashtags.iter().any(|t| t == "#стрим"));
+    }
+
+    #[test]
+    fn hashtags_drop_urls_and_platform_junk() {
+        let tags = hashtags("залетаем на стрим https www twitch tv xqc катка фидер разносим", 6);
+        assert!(!tags.iter().any(|t| t == "#https" || t == "#www" || t == "#twitch" || t == "#xqc"));
+        assert!(tags.iter().any(|t| t == "#катка"), "got {tags:?}");
+    }
+
+    #[test]
+    fn hashtags_keep_dominant_script() {
+        // Cyrillic-dominant text: stray latin words must not become tags.
+        let tags = hashtags("сегодня отличная катка на стриме super gameplay", 6);
+        assert!(tags.iter().any(|t| t == "#сегодня"));
+        assert!(!tags.iter().any(|t| t == "#super" || t == "#gameplay"));
+    }
+
+    #[test]
+    fn short_title_skips_url_and_number_salad() {
+        let t = short_title("https://twitch.tv/xqc 12345 67890 1234567 Это реально смешной момент стрима", 70);
+        assert!(!t.contains("http"), "got {t:?}");
+        assert!(t.to_lowercase().contains("смешной"), "got {t:?}");
+    }
+
+    #[test]
+    fn heuristic_strips_urls_from_description() {
+        let d = heuristic("Залетаем на https://twitch.tv/foo сегодня разносим лобби в игре!", "streamer");
+        assert!(!d.description.contains("http"), "got {:?}", d.description);
+        assert!(!d.title.contains("http"), "got {:?}", d.title);
     }
 
     #[test]

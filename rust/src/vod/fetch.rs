@@ -3,7 +3,7 @@
 //! We shell out to yt-dlp rather than reimplement its site logic. The binary is
 //! resolved from `STREAMREELS_YTDLP` or PATH.
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -150,6 +150,59 @@ pub fn fetch_source(url: &str, _work: &Path) -> Result<PathBuf> {
     let size = video_size(&path).map(|(w, h)| format!("{w}x{h}")).unwrap_or_default();
     log(format!("source ready: {} ({dur:.0}s, {size})", path.display()));
     Ok(path)
+}
+
+/// Grab one preview frame (JPEG bytes) from a URL without downloading the whole
+/// VOD. Resolves the direct stream with `yt-dlp -g` and hands it to `ffmpeg`,
+/// so a Twitch/YouTube link costs a couple of seconds instead of a full fetch.
+///
+/// A non-`http(s)` input is treated as a local path (handy for tests and for
+/// the bundled sample).
+pub fn grab_url_frame(url: &str) -> Result<Vec<u8>> {
+    let source = if url.starts_with("http://") || url.starts_with("https://") {
+        let mut cmd = Command::new(ytdlp_bin());
+        cmd.args([
+            "--no-playlist",
+            "--no-warnings",
+            "-f",
+            "best[height<=720]/best",
+            "-g",
+        ])
+        .arg(url);
+        let out = run_out(&mut cmd)?;
+        out.lines()
+            .map(str::trim)
+            .find(|l| l.starts_with("http"))
+            .map(String::from)
+            .ok_or_else(|| anyhow::anyhow!("yt-dlp returned no stream URL for {url:?}"))?
+    } else {
+        url.to_string()
+    };
+
+    let tmp = std::env::temp_dir().join(format!(
+        "sr-preview-{}-{}.jpg",
+        std::process::id(),
+        crate::utils::short_hash(url)
+    ));
+    let status = Command::new("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error"])
+        .args(["-ss", "1"])
+        .arg("-i")
+        .arg(&source)
+        .args(["-frames:v", "1", "-q:v", "3", "-y"])
+        .arg(&tmp)
+        .status()
+        .context("spawn ffmpeg for preview frame")?;
+    if !status.success() {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(anyhow::anyhow!("ffmpeg preview frame failed for {url:?}"));
+    }
+    let data = std::fs::read(&tmp).unwrap_or_default();
+    let _ = std::fs::remove_file(&tmp);
+    if data.is_empty() {
+        return Err(anyhow::anyhow!("empty preview frame for {url:?}"));
+    }
+    Ok(data)
 }
 
 /// Prefix the downloaded file so a later job can tell this height from an older one.

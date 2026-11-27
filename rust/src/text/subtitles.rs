@@ -173,17 +173,48 @@ pub fn model_path() -> Result<PathBuf> {
 
 /// Word-level transcription of `media_path` (absolute times in seconds).
 pub fn transcribe(media_path: &Path, language: Option<&str>) -> Result<Vec<Word>> {
-    use whisper_rs::{FullParams, SamplingStrategy};
-
     let audio = media::decode_mono(media_path)
         .with_context(|| format!("decode audio {}", media_path.display()))?;
+    log(format!(
+        "transcribing {} ({} samples @ {} Hz)",
+        media_path.display(),
+        audio.len(),
+        media::SAMPLE_RATE
+    ));
+    transcribe_audio(&audio, language, 0.0)
+}
+
+/// Copy the `[start, start+dur]` slice (seconds) out of a decoded mono buffer.
+pub fn slice_audio(audio: &[f32], start: f64, dur: f64) -> Vec<f32> {
+    let sr = media::SAMPLE_RATE as f64;
+    let n = audio.len();
+    let lo = ((start.max(0.0)) * sr).floor() as usize;
+    let hi = (((start + dur).max(0.0)) * sr).ceil() as usize;
+    let lo = lo.min(n);
+    let hi = hi.min(n);
+    if lo >= hi {
+        Vec::new()
+    } else {
+        audio[lo..hi].to_vec()
+    }
+}
+
+/// Transcribe an already-decoded mono buffer. Word timestamps are shifted by
+/// `offset` seconds so callers can slice a long source and still get absolute
+/// times. This is the core used by [`transcribe`] and by the pipeline, which
+/// transcribes only the chosen highlight windows instead of the whole VOD.
+pub fn transcribe_audio(audio: &[f32], language: Option<&str>, offset: f64) -> Result<Vec<Word>> {
+    use whisper_rs::{FullParams, SamplingStrategy};
+
+    if audio.is_empty() {
+        return Ok(Vec::new());
+    }
 
     // Only a bounded number of runs may hold the model at once.
     let _permit = whisper_sem().acquire();
     let ctx = shared_ctx()?;
     log(format!(
-        "transcribing {} ({} samples @ {} Hz)",
-        media_path.display(),
+        "transcribing buffer ({} samples @ {} Hz, offset {offset:.1}s)",
         audio.len(),
         media::SAMPLE_RATE
     ));
@@ -207,7 +238,7 @@ pub fn transcribe(media_path: &Path, language: Option<&str>) -> Result<Vec<Word>
     params.set_print_timestamps(false);
 
     state
-        .full(params, &audio)
+        .full(params, audio)
         .map_err(|e| anyhow!("whisper run: {e}"))?;
 
     let n_segments = state.full_n_segments();
@@ -229,6 +260,13 @@ pub fn transcribe(media_path: &Path, language: Option<&str>) -> Result<Vec<Word>
             continue;
         }
         words.extend(seg_words);
+    }
+
+    if offset != 0.0 {
+        for w in &mut words {
+            w.start += offset;
+            w.end += offset;
+        }
     }
 
     if dropped > 0 {

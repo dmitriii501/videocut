@@ -254,6 +254,17 @@ pub fn tbank_enabled() -> bool {
     tbank_terminal_key().is_some() && tbank_password().is_some()
 }
 
+/// Maximum balance the demo (no-acquiring) top-up will grant. Prevents the
+/// "free credits forever" hole when real payments are not configured. Set
+/// `STREAMREELS_DEMO_CREDIT_CAP` to override; `0` disables the cap.
+pub fn demo_credit_cap() -> i64 {
+    std::env::var("STREAMREELS_DEMO_CREDIT_CAP")
+        .ok()
+        .and_then(|v| v.trim().parse::<i64>().ok())
+        .unwrap_or(100)
+        .max(0)
+}
+
 // --- Telegram ----------------------------------------------------------------
 
 pub fn tg_token() -> Option<String> {

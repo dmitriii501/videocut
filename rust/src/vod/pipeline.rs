@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::config;
+use crate::media;
 use crate::vod::describe;
 use crate::vod::fetch;
 use crate::vod::gameplay;
@@ -149,42 +150,60 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
         None => None,
     };
 
-    // Full-source word transcript (absolute times).  In auto mode it drives
-    // highlight detection and is reused for every segment's subtitles; in
-    // manual mode we still transcribe the whole source once so segments can be
-    // sliced.
-    let all_words: Option<Vec<Word>> = if let Some(words) = &job.words {
-        Some(words.clone())
-    } else if !job.no_subs || job.auto_count > 0 {
-        job.note("🎧 Распознаю речь (whisper)…");
-        Some(
-            subtitles::transcribe(&source, config::whisper_lang().as_deref())
-                .context("transcribe source")?,
-        )
+    // Decode the audio once. It drives highlight detection (energy) and lets us
+    // transcribe only the chosen windows instead of the whole — often hours-long
+    // — source, which is the dominant cost on long VODs.
+    let need_audio = job.words.is_none() && (job.auto_count > 0 || !job.no_subs);
+    let audio: Option<Vec<f32>> = if need_audio {
+        Some(media::decode_mono(&source).context("decode source audio")?)
     } else {
         None
     };
 
-    let segments: Vec<(f64, f64)> = if job.auto_count > 0 {
+    // In auto mode the energy signal alone picks the moments; a transcript is
+    // only needed afterwards for the chosen segments' subtitles. Manual mode
+    // already has its segments, so it scores them from the same buffer.
+    let segments: Vec<highlights::ScoredSegment> = if job.auto_count > 0 {
         job.note("🔍 Ищу лучшие моменты…");
-        let segs = highlights::detect_highlights(
-            &source,
-            job.auto_count,
-            15.0,
-            45.0,
-            all_words.as_deref(),
-        )?;
+        let segs = match &audio {
+            Some(audio) => highlights::detect_highlights_from_audio(
+                audio,
+                total,
+                job.auto_count,
+                15.0,
+                45.0,
+                None,
+            ),
+            None => highlights::detect_highlights_scored(&source, job.auto_count, 15.0, 45.0, None)?,
+        };
         if segs.is_empty() {
             bail!("auto-detect found no highlights; use -s instead");
         }
         log(format!("auto mode: {} highlight(s)", segs.len()));
         segs
     } else {
-        job.segments.clone()
+        // Manual segments: still score them so the UI shows a real hype value.
+        let hype = match &audio {
+            Some(audio) => highlights::score_audio(audio, total, &job.segments, None),
+            None => highlights::score_segments(&source, &job.segments, None).unwrap_or_else(|exc| {
+                log(format!("highlight: scoring manual segments failed ({exc}); default 0.5"));
+                vec![0.5; job.segments.len()]
+            }),
+        };
+        job.segments
+            .iter()
+            .zip(hype)
+            .map(|(&(start, dur), hype)| highlights::ScoredSegment { start, dur, hype })
+            .collect()
     };
 
+    // Precomputed transcript (live clips pass clip-relative words).
+    let precomputed: Option<Vec<Word>> = job.words.clone();
+
     let total_segments = segments.len();
-    for (idx, &(start, mut dur)) in segments.iter().enumerate() {
+    for (idx, seg) in segments.iter().enumerate() {
+        let (start, mut dur) = (seg.start, seg.dur);
+        let hype = seg.hype;
         let idx = idx + 1;
         if start >= total {
             log(format!("segment {idx} starts after source end, skipped"));
@@ -200,7 +219,26 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
         let work = workdir(&job.source_url)?;
         let ass_path = work.join(format!("seg{idx}.ass"));
         let mut ass_for_render: Option<PathBuf> = None;
-        let seg_words = slice_words(all_words.as_deref().unwrap_or(&[]), start, dur);
+        // Subtitles for this segment: reuse a precomputed transcript, or
+        // transcribe only this window (cheap) instead of the whole source.
+        let seg_words: Vec<Word> = if let Some(words) = &precomputed {
+            slice_words(words, start, dur)
+        } else if !job.no_subs {
+            match &audio {
+                Some(audio) => {
+                    let window = subtitles::slice_audio(audio, start, dur);
+                    job.note(&format!("🎧 Распознаю речь (whisper) {idx}/{total_segments}…"));
+                    subtitles::transcribe_audio(&window, config::whisper_lang().as_deref(), start)
+                        .unwrap_or_else(|exc| {
+                            log(format!("segment {idx}: whisper failed ({exc}); no subtitles"));
+                            Vec::new()
+                        })
+                }
+                None => Vec::new(),
+            }
+        } else {
+            Vec::new()
+        };
         let mut sub_words_for_desc: Vec<Word> = seg_words.clone();
 
         if !job.no_subs {
@@ -272,6 +310,9 @@ pub fn run_job(job: &ReelJob) -> Result<Vec<PathBuf>> {
         let info = describe::describe(&seg_text, &channel);
         let text_path = out.with_extension("txt");
         std::fs::write(&text_path, describe::as_text_file(&info))?;
+        // Hype score sidecar (0..1) consumed by the web layer.
+        let hype_path = out.with_extension("hype");
+        std::fs::write(&hype_path, format!("{hype:.4}"))?;
         log(format!(
             "description -> {}: {}",
             text_path

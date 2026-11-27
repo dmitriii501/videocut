@@ -423,11 +423,13 @@ pub fn run_live(job: &LiveJob) -> Result<Vec<PathBuf>> {
                     Ok(()) => final_path,
                     Err(_) => o.clone(),
                 };
-                // Move the sidecar alongside the reel.
-                let sidecar = o.with_extension("txt");
-                let final_sidecar = final_path.with_extension("txt");
-                if sidecar.exists() && sidecar != final_sidecar {
-                    let _ = std::fs::rename(&sidecar, &final_sidecar);
+                // Move the sidecars (.txt description, .hype score) alongside the reel.
+                for ext in ["txt", "hype"] {
+                    let sidecar = o.with_extension(ext);
+                    let final_sidecar = final_path.with_extension(ext);
+                    if sidecar.exists() && sidecar != final_sidecar {
+                        let _ = std::fs::rename(&sidecar, &final_sidecar);
+                    }
                 }
                 produced.push(final_path.clone());
                 log(format!("live: produced {}", final_path.display()));
